@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>A3 · Viewers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select,input{font-family:inherit}
+button,select{cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.chip{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid #232B35;background:transparent;color:#9AA6B5;font-size:13px}
+.chip.on{background:#1B2430;color:#E6EAF0;border-color:#2E3A49}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1300px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#9AA6B5">이 서버</div><div class="mono" style="font-size:13px;margin-top:2px">edge-tokyo-1</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv" href="A3-EdgeLocal.dc.html">Overview</a>
+<a class="nv" href="A3-Workers.dc.html">Workers</a>
+<a class="nv" href="A3-Broadcasts.dc.html">Broadcasts (routers)</a>
+<a class="nv" href="A3-Pipe.dc.html">Pipe 수신</a>
+<a class="nv on" href="A3-Viewers.dc.html">Viewers</a>
+<a class="nv" href="A3-Alerts.dc.html">Alerts</a>
+</div>
+<a href="O1-Overview.dc.html" style="margin-top:auto;display:flex;align-items:center;min-height:44px;font-size:13px">Origin 대시보드 ↗</a>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 style="margin:0;font-size:24px;font-weight:600">Viewers</h1><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 10s 갱신</span>
+</header>
+<p style="margin:-8px 0 0;color:#9AA6B5;line-height:1.6;max-width:760px">이 서버에 접속한 viewer를 개별로 봅니다. 기본 정렬은 <span style="color:#E6EAF0">품질이 나쁜 순</span>이라 문제 viewer가 항상 위에 옵니다. 행을 선택하면 오른쪽에 요약이 열리고, Viewer ID를 누르면 재생 상태 상세 페이지로 이동합니다.</p>
+
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+<label style="flex:1 1 240px;max-width:360px;display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9AA6B5">검색
+<input type="text" placeholder="viewer id" style="min-height:44px;box-sizing:border-box;border:1px solid #232B35;border-radius:8px;padding:0 12px;font-size:14px;background:#151A21;color:#E6EAF0">
+</label>
+<div role="group" aria-label="필터" style="display:flex;gap:8px;flex-wrap:wrap;align-self:flex-end">
+<button class="chip on">전체 703</button>
+<button class="chip">loss 5% 이상 52</button>
+<button class="chip">모바일 118</button>
+<button class="chip">ch-live-0412</button>
+<button class="chip">Low 레이어 140</button>
+</div>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+
+<section aria-label="Viewer 목록" class="cd" style="flex:3 1 560px;min-width:0;padding:12px 20px 20px">
+<div style="overflow-x:auto"><table style="width:100%;min-width:600px;border-collapse:collapse;font-size:13px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:10px 0;font-weight:500">Viewer</th><th style="font-weight:500">방송</th><th style="font-weight:500">Loss ↓</th><th style="font-weight:500">Freeze</th><th style="font-weight:500">RTT</th><th style="font-weight:500">레이어</th><th style="font-weight:500">환경</th><th style="font-weight:500">접속</th></tr></thead>
+<tbody class="mono" style="font-size:12.5px">
+<tr style="border-top:1px solid #232B35;background:#1B2430"><td style="padding:0 8px"><a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px">v-8f3a</a></td><td>live-0412</td><td style="color:#FF8F8F">▲ 9.1%</td><td>4/분</td><td>310ms</td><td>Low</td><td>LTE</td><td>00:12:40</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0 8px"><a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px">v-21bc</a></td><td>live-0412</td><td style="color:#FF8F8F">▲ 7.4%</td><td>3/분</td><td>240ms</td><td>Low</td><td>Wi-Fi</td><td>00:31:05</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0 8px"><a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px">v-a4f2</a></td><td>live-0412</td><td style="color:#F5C451">▲ 6.0%</td><td>2/분</td><td>205ms</td><td>Low</td><td>Wi-Fi</td><td>00:08:22</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0 8px"><a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px">v-d210</a></td><td>live-0412</td><td style="color:#F5C451">▲ 5.5%</td><td>2/분</td><td>198ms</td><td>Mid</td><td>유선</td><td>00:44:10</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0 8px"><a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px">v-9b71</a></td><td>news-12</td><td>4.8%</td><td>1/분</td><td>170ms</td><td>Mid</td><td>LTE</td><td>00:20:03</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0 8px"><a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px">v-3e08</a></td><td>live-0412</td><td>3.1%</td><td>1/분</td><td>140ms</td><td>Mid</td><td>Wi-Fi</td><td>00:15:48</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0 8px"><a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px">v-52fa</a></td><td>sports-03</td><td>1.9%</td><td>0/분</td><td>96ms</td><td>High</td><td>Wi-Fi</td><td>00:03:11</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0 8px"><a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px">v-c4a6</a></td><td>live-0412</td><td>0.9%</td><td>0/분</td><td>60ms</td><td>High</td><td>유선</td><td>00:41:30</td></tr>
+</tbody></table></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px;color:#9AA6B5;flex-wrap:wrap;gap:8px"><span>703명 중 8명 표시 (loss 높은 순)</span><a href="#" style="display:inline-flex;align-items:center;min-height:44px">더 보기</a></div>
+</section>
+
+<aside aria-label="Viewer 상세" class="cd" style="flex:2 1 340px;min-width:0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2 class="mono" style="margin:0;font-size:16px;font-weight:500">v-8f3a</h2><span style="font-size:12px;color:#FF8F8F">▲ loss 9.1%</span></div>
+<div>
+<div style="font-size:12px;color:#9AA6B5;margin-bottom:6px">Loss (최근 5분, 서버 측정)</div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="이 viewer의 loss가 5분간 2%에서 9.1%로 상승" style="display:block">
+<g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g>
+<g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="4" y="16">10%</text><text x="10" y="56">5%</text><text x="10" y="96">0%</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g>
+<polyline fill="none" stroke="#F5A65B" stroke-width="2" stroke-linejoin="round" points="36,76 58,74 80,70 102,67 124,61 146,55 168,50 190,44 212,41 234,34 256,30 278,24 300,19"/>
+<circle cx="300" cy="19" r="4" fill="#F5A65B" stroke="#151A21" stroke-width="2"/>
+</svg>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;font-size:13px">
+<div style="grid-column:1/-1;font-size:12px;color:#9AA6B5;border-bottom:1px solid #232B35;padding-bottom:6px">서버가 본 값</div>
+<div><div style="font-size:12px;color:#9AA6B5">수신 레이어</div><div class="mono">Low · 180 kbps</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">Transport</div><div class="mono">recv · connected</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">Loss</div><div class="mono" style="color:#FF8F8F">9.1%</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">RTT</div><div class="mono">310 ms</div></div>
+<div style="grid-column:1/-1;font-size:12px;color:#9AA6B5;border-bottom:1px solid #232B35;padding-bottom:6px;margin-top:4px">viewer 브라우저가 보고한 값</div>
+<div><div style="font-size:12px;color:#9AA6B5">Freeze</div><div class="mono" style="color:#FF8F8F">4회 / 분</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">디코딩 fps</div><div class="mono">11</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">Jitter buffer</div><div class="mono">420 ms</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">환경</div><div class="mono">LTE · Chrome 129</div></div>
+</div>
+<div style="font-size:12px;color:#9AA6B5;line-height:1.5;border-top:1px solid #232B35;padding-top:12px">Low 레이어까지 내려갔는데도 손실과 RTT가 높고 LTE 환경입니다. pipe 수신 손실로 전체 품질이 낮아진 위에 이 viewer의 네트워크 문제가 겹친 경우로 보입니다.</div>
+<a href="A3-ViewerDetail.dc.html" style="display:inline-flex;align-items:center;min-height:44px;font-weight:500">재생 상태 상세 보기 →</a>
+</aside>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1300}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

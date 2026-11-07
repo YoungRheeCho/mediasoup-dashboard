@@ -1,0 +1,21 @@
+# origin 대시보드 overlay. 원본 매니페스트는 수정하지 않고 참조만 한다.
+#   kubectl kustomize --load-restrictor=LoadRestrictionsNone deploy/k8s/origin | kubectl apply -f -
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: qos
+
+resources:
+  - ../../../../qos/network/mediasoup-origin.yaml
+
+configMapGenerator:
+  - name: msdash-hook
+    files:
+      - msdash-hook.cjs=../../../hook/msdash-hook.cjs
+
+patches:
+  - path: patch.yaml
+
+images:
+  - name: msdash-sidecar
+    newName: ghcr.io/CHANGE-ME/mediasoup-dashboard # ← 빌드해서 올린 이미지
+    newTag: "0.1.0"

@@ -1,0 +1,132 @@
+# mediasoup-edge Deployment에 더하는 내용 (strategic merge).
+#  - mediasoup-server: 사전 로드 훅(NODE_OPTIONS) + 훅 파일·소켓 볼륨 (서버 코드는 그대로)
+#  - msdash: 대시보드 사이드카 (수집기·알림·heartbeat·API·화면)
+#  - msdash-db: TimescaleDB (이 노드 전용, 127.0.0.1만 열림)
+# CHANGE-ME 표시를 환경에 맞게 바꾼다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mediasoup-edge
+  namespace: qos
+spec:
+  template:
+    spec:
+      volumes:
+        - name: msdash-hook
+          configMap:
+            name: msdash-hook
+            defaultMode: 0444
+        - name: msdash-sock
+          emptyDir: {}
+        # 이력 보관용. hostNetwork + 노드당 1 Pod라 hostPath가 단순하다. PVC를 쓰려면 이 항목만 바꾼다.
+        - name: msdash-db
+          hostPath:
+            path: /var/lib/msdash/edge
+            type: DirectoryOrCreate
+
+      containers:
+        - name: mediasoup-server
+          env:
+            - name: NODE_OPTIONS
+              value: --require /dashboard-hook/msdash-hook.cjs
+            - name: MSDASH_HOOK_SOCKET
+              value: /var/run/msdash/hook.sock
+          volumeMounts:
+            - name: msdash-hook
+              mountPath: /dashboard-hook
+              readOnly: true
+            - name: msdash-sock
+              mountPath: /var/run/msdash
+
+        - name: msdash
+          image: msdash-sidecar
+          imagePullPolicy: IfNotPresent
+          # Pod 단위 seccomp(allow-io-uring.json)를 이 컨테이너에서는 기본 프로필로 바꾼다 (H14)
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: MSDASH_MODE
+              value: edge
+            - name: NODE_NAME # edge 이름 = 노드 이름 (H11)
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: SERVER_IP # pipe 수신 IP이자 대시보드 주소 (mediasoup 서버와 같은 값)
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: MSDASH_HTTP_PORT
+              value: "18080"
+            - name: MSDASH_PUBLIC_URL
+              value: http://$(SERVER_IP):18080
+            - name: MSDASH_ORIGIN_URL # ← origin 노드 IP (heartbeat 대상, 사이드바 링크)
+              value: http://CHANGE-ME-ORIGIN-NODE-IP:18080
+            - name: MSDASH_HOOK_SOCKET
+              value: /var/run/msdash/hook.sock
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: msdash-db
+                  key: password
+            - name: MSDASH_DATABASE_URL
+              value: postgres://postgres:$(DB_PASSWORD)@127.0.0.1:55432/msdash
+            - name: MSDASH_NIC_CAPACITY_BPS # NIC 용량 (bps)
+              value: "1000000000"
+            - name: MSDASH_MOCK # 서버 코드 수정이 필요한 값의 mock 표시 (0이면 끔)
+              value: "1"
+          ports:
+            - name: dashboard
+              containerPort: 18080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 18080
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: msdash-sock
+              mountPath: /var/run/msdash
+
+        - name: msdash-db
+          image: timescale/timescaledb:2.17.2-pg16
+          imagePullPolicy: IfNotPresent
+          # hostNetwork라 다른 Postgres와 겹치지 않는 포트, 외부에는 열지 않는다 (H10)
+          args: ["-c", "port=55432", "-c", "listen_addresses=127.0.0.1", "-c", "shared_buffers=128MB"]
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: msdash-db
+                  key: password
+            - name: POSTGRES_DB
+              value: msdash
+            - name: PGPORT
+              value: "55432"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-h", "127.0.0.1", "-p", "55432", "-U", "postgres"]
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: msdash-db
+              mountPath: /var/lib/postgresql/data

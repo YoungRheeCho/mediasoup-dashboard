@@ -1,0 +1,135 @@
+#!/usr/bin/env node
+'use strict';
+
+// 훅 시험용 하네스. mediasoup-demo 서버와 같은 entry 이름으로 실행되어 훅이 붙는다.
+// origin router(worker0)에 plain broadcaster → 원격 pipe → edge producer router(worker1) → pipeToRouter → edge consumer shard(worker0) → viewer.
+// HARNESS_ROLE=edge|origin: 전역 rooms가 어느 쪽 router를 방송 router로 보일지 고른다 (TerminalServer 흉내).
+
+const dgram = require('node:dgram');
+const mediasoup = require('mediasoup');
+
+const ETH = process.env.HARNESS_ETH_IP;
+const ROLE = process.env.HARNESS_ROLE || 'edge';
+const LOSS = Number(process.env.HARNESS_LOSS || '0.03');
+
+(async () => {
+	const mediaCodecs = [
+		{ kind: 'audio', mimeType: 'audio/opus', clockRate: 48000, channels: 2 },
+		{ kind: 'video', mimeType: 'video/VP8', clockRate: 90000 },
+	];
+	const w0 = await mediasoup.createWorker({ logLevel: 'warn', appData: { idx: 0 } });
+	const w1 = await mediasoup.createWorker({ logLevel: 'warn', appData: { idx: 1 } });
+	const w2 = await mediasoup.createWorker({ logLevel: 'warn', appData: { idx: 2 } });
+	const origin = await w0.createRouter({ mediaCodecs });
+	const edgeProd = await w1.createRouter({ mediaCodecs });
+	// producer id는 worker 안에서 유일해야 한다. origin과 같은 worker에 같은 id를 복제할 수 없어 별도 worker.
+	const edgeCons = await w2.createRouter({ mediaCodecs });
+
+	const plain = await origin.createPlainTransport({
+		listenInfo: { protocol: 'udp', ip: '127.0.0.1' },
+		rtcpMux: true,
+		comedia: true,
+	});
+	const producer = await plain.produce({
+		kind: 'video',
+		rtpParameters: {
+			codecs: [
+				{
+					mimeType: 'video/VP8',
+					payloadType: 101,
+					clockRate: 90000,
+					rtcpFeedback: [{ type: 'nack' }, { type: 'nack', parameter: 'pli' }],
+				},
+			],
+			encodings: [{ ssrc: 22222222 }],
+		},
+		appData: { peerId: 'host-1', source: 'video' },
+	});
+
+	// origin(127.0.0.1) ↔ edge(ETH): origin 쪽에서 원격 IP가 ETH로 보여 "다른 서버로 가는 pipe"가 된다.
+	const oPipe = await origin.createPipeTransport({ listenInfo: { protocol: 'udp', ip: '127.0.0.1' } });
+	const ePipe = await edgeProd.createPipeTransport({ listenInfo: { protocol: 'udp', ip: ETH } });
+
+	await oPipe.connect({ ip: ETH, port: ePipe.tuple.localPort });
+	await ePipe.connect({ ip: '127.0.0.1', port: oPipe.tuple.localPort });
+
+	const pipeConsumer = await oPipe.consume({ producerId: producer.id });
+	const pipeProducer = await ePipe.produce({
+		id: producer.id,
+		kind: pipeConsumer.kind,
+		rtpParameters: pipeConsumer.rtpParameters,
+		appData: { peerId: '__external__', source: 'video' },
+	});
+
+	await edgeProd.pipeToRouter({ producerId: pipeProducer.id, router: edgeCons });
+
+	const viewerTransport = await edgeCons.createWebRtcTransport({
+		listenInfos: [{ protocol: 'udp', ip: '127.0.0.1' }],
+		appData: { direction: 'consumer' },
+	});
+
+	await viewerTransport.consume({ producerId: producer.id, rtpCapabilities: edgeCons.rtpCapabilities });
+
+	const originViewer = await origin.createWebRtcTransport({
+		listenInfos: [{ protocol: 'udp', ip: '127.0.0.1' }],
+		appData: { direction: 'consumer' },
+	});
+
+	await originViewer.consume({ producerId: producer.id, rtpCapabilities: origin.rtpCapabilities });
+
+	global.rooms = new Map([
+		[
+			'room-x',
+			{
+				id: 'room-x',
+				serialize: () => ({
+					roomId: 'room-x',
+					createdAt: new Date(),
+					peers: [
+						{ peerId: 'host-1', displayName: 'Host One', device: { flag: 'chrome', name: 'Chrome', version: '130' }, remoteAddress: '127.0.0.1' },
+					],
+					broadcasterPeers: [],
+				}),
+				getRouterId: role =>
+					ROLE === 'origin' ? origin.id : role === 'consumer' ? edgeCons.id : edgeProd.id,
+			},
+		],
+	]);
+
+	// broadcaster RTP: 50 pps, LOSS 비율만큼 seq를 건너뛴다 (보내지 않음 = 유실).
+	const sock = dgram.createSocket('udp4');
+	let seq = 1000;
+	let ts = 0;
+	let sent = 0;
+	let skipped = 0;
+	const payload = Buffer.alloc(800, 0);
+
+	payload[0] = 0x10; // VP8 payload descriptor: S=1, PID=0
+
+	setInterval(() => {
+		seq = (seq + 1) & 0xffff;
+		ts = (ts + 1800) >>> 0;
+
+		if (Math.random() < LOSS) {
+			skipped++;
+
+			return;
+		}
+
+		const header = Buffer.alloc(12);
+
+		header[0] = 0x80;
+		header[1] = 101 | 0x80; // marker
+		header.writeUInt16BE(seq, 2);
+		header.writeUInt32BE(ts, 4);
+		header.writeUInt32BE(22222222, 8);
+		sock.send(Buffer.concat([header, payload]), plain.tuple.localPort, '127.0.0.1');
+		sent++;
+	}, 20);
+
+	setInterval(() => console.log(`[harness] sent=${sent} skipped=${skipped}`), 10000);
+	console.log(`[harness] ready role=${ROLE} producer=${producer.id} viewer=${viewerTransport.id}`);
+})().catch(error => {
+	console.error(error);
+	process.exit(1);
+});

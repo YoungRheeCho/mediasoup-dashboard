@@ -1,0 +1,22 @@
+﻿# Local dependencies and build output
+**/node_modules/
+**/dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log
+
+# Screenshots, design backups and local inspection artifacts
+screenshots/
+design/screenshots/
+design-backup/
+.taste-skill/
+
+# Local credentials and OS metadata
+*.pem
+*.key
+*.p12
+*.pfx
+.DS_Store
+Thumbs.db

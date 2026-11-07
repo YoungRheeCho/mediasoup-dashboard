@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Origin · Overview</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select,input{font-family:inherit}
+button,select{cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.lb{font-size:12px;color:#9AA6B5}
+.er{display:flex;align-items:center;gap:10px;min-height:44px;border-top:1px solid #232B35}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1500px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #2E5E94;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#7DBBFF;font-weight:600;letter-spacing:0.04em">ORIGIN</div><div class="mono" style="font-size:13px;margin-top:2px">origin-seoul-01</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv on" href="O1-Overview.dc.html">Overview</a>
+<a class="nv" href="O2-Rooms.dc.html">Rooms &amp; Broadcasters</a>
+<a class="nv" href="O4-Edges.dc.html">Connected Edges</a>
+<a class="nv" href="#">Workers</a>
+<a class="nv" href="#">Viewers</a>
+<a class="nv" href="#">Alerts</a>
+</div>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 style="margin:0;font-size:24px;font-weight:600">Overview</h1><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 10s 갱신</span>
+</header>
+<p style="margin:-8px 0 0;color:#9AA6B5;line-height:1.6;max-width:780px">이 서버(origin)가 직접 받는 broadcaster와 viewer, 그리고 연결된 edge 목록입니다. edge의 상세 상태는 각 edge 대시보드에서 확인합니다.</p>
+
+<section aria-label="핵심 지표" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">
+<div class="cd" style="padding:16px"><div class="lb">방송 (room)</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px">5</div><div class="lb" style="margin-top:4px">진행 중</div></div>
+<div class="cd" style="padding:16px"><div class="lb">Broadcasters</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px">6</div><div class="lb" style="margin-top:4px">송출 중 5 · 대기 1</div></div>
+<div class="cd" style="padding:16px"><div class="lb">이 서버 viewers</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px">1,407</div><div class="lb" style="margin-top:4px">edge 접속자는 미포함</div></div>
+<div class="cd" style="padding:16px;border-color:#3A4553"><div class="lb">연결된 edge</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px">6 <span style="font-size:14px;color:#9AA6B5">/ 7</span></div><div style="font-size:12px;color:#F5C451;margin-top:4px">▲ 1개 pipe 끊김</div></div>
+<div class="cd" style="padding:16px"><div class="lb">Worker CPU (최대)</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px">64<span style="font-size:14px;color:#9AA6B5"> %</span></div><div class="lb" style="margin-top:4px">w0 · 평균 50%</div></div>
+<div class="cd" style="padding:16px"><div class="lb">NIC Egress</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px">3.5<span style="font-size:14px;color:#9AA6B5"> / 10 Gbps</span></div><div class="lb" style="margin-top:4px">viewer 3.4 + pipe 0.07</div></div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+
+<section aria-label="방송 요약" class="cd" style="flex:3 1 560px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">방송</h2><a href="O2-Rooms.dc.html" style="display:inline-flex;align-items:center;min-height:44px;font-size:13px">Rooms &amp; Broadcasters 보기 →</a></div>
+<div style="overflow-x:auto"><table style="width:100%;min-width:560px;border-collapse:collapse;font-size:13px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:8px 0;font-weight:500">방송</th><th style="font-weight:500">Broadcasters</th><th style="font-weight:500">Ingest</th><th style="font-weight:500">이 서버 viewers</th><th style="font-weight:500">전달 edge</th><th style="font-weight:500">Viewer loss p50</th></tr></thead>
+<tbody class="mono">
+<tr style="border-top:1px solid #232B35"><td style="padding:0"><a href="O2-Rooms.dc.html" style="display:inline-flex;align-items:center;min-height:44px">ch-live-0412</a></td><td>1 / 2</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">✓ 정상</td><td>612</td><td>6</td><td>0.8%</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0"><a href="O2-Rooms.dc.html" style="display:inline-flex;align-items:center;min-height:44px">ch-news-12</a></td><td>1 / 1</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">✓ 정상</td><td>240</td><td>4</td><td>0.6%</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0"><a href="O2-Rooms.dc.html" style="display:inline-flex;align-items:center;min-height:44px">ch-sports-03</a></td><td>1 / 1</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">✓ 정상</td><td>410</td><td>4</td><td>0.9%</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0"><a href="O2-Rooms.dc.html" style="display:inline-flex;align-items:center;min-height:44px">ch-music-08</a></td><td>1 / 1</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">✓ 정상</td><td>90</td><td>3</td><td>0.7%</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0"><a href="O2-Rooms.dc.html" style="display:inline-flex;align-items:center;min-height:44px">ch-talk-05</a></td><td>1 / 1</td><td style="color:#F5C451;font-family:'IBM Plex Sans',sans-serif">▲ 입력 loss 3.2%</td><td>55</td><td>1</td><td style="color:#F5C451">▲ 3.1%</td></tr>
+</tbody></table></div>
+</section>
+
+<section aria-label="연결된 edge" class="cd" style="flex:2 1 340px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">Edge</h2><a href="O4-Edges.dc.html" style="display:inline-flex;align-items:center;min-height:44px;font-size:13px">전체 보기 →</a></div>
+<div class="er"><span class="mono" style="flex:1;font-size:13px">edge-sydney-1</span><span style="color:#F5C451;font-size:12px">▲ 끊김 4분</span><a href="https://edge-sydney-1.example.net/" target="_blank" rel="noopener" aria-label="edge-sydney-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;width:68px;font-size:13px">열기 ↗</a></div>
+<div class="er"><span class="mono" style="flex:1;font-size:13px">edge-tokyo-1</span><span style="color:#F5C451;font-size:12px">▲ loss 2.4%</span><a href="https://edge-tokyo-1.example.net/" target="_blank" rel="noopener" aria-label="edge-tokyo-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;width:68px;font-size:13px">열기 ↗</a></div>
+<div class="er"><span class="mono" style="flex:1;font-size:13px">edge-seoul-1</span><span style="color:#4ADE9A;font-size:12px">● 연결</span><a href="https://edge-seoul-1.example.net/" target="_blank" rel="noopener" aria-label="edge-seoul-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;width:68px;font-size:13px">열기 ↗</a></div>
+<div class="er"><span class="mono" style="flex:1;font-size:13px">edge-seoul-2</span><span style="color:#4ADE9A;font-size:12px">● 연결</span><a href="https://edge-seoul-2.example.net/" target="_blank" rel="noopener" aria-label="edge-seoul-2 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;width:68px;font-size:13px">열기 ↗</a></div>
+<div class="er"><span class="mono" style="flex:1;font-size:13px">edge-busan-1</span><span style="color:#4ADE9A;font-size:12px">● 연결</span><a href="https://edge-busan-1.example.net/" target="_blank" rel="noopener" aria-label="edge-busan-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;width:68px;font-size:13px">열기 ↗</a></div>
+<div class="er"><span class="mono" style="flex:1;font-size:13px">edge-sg-1</span><span style="color:#4ADE9A;font-size:12px">● 연결</span><a href="https://edge-sg-1.example.net/" target="_blank" rel="noopener" aria-label="edge-sg-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;width:68px;font-size:13px">열기 ↗</a></div>
+<div class="er"><span class="mono" style="flex:1;font-size:13px">edge-la-1</span><span style="color:#4ADE9A;font-size:12px">● 연결</span><a href="https://edge-la-1.example.net/" target="_blank" rel="noopener" aria-label="edge-la-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;justify-content:flex-end;min-height:44px;width:68px;font-size:13px">열기 ↗</a></div>
+</section>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+
+<section aria-label="서버 자원" class="cd" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="margin:0;font-size:15px;font-weight:600">서버 자원</h2><span class="lb">CPU · NIC</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div class="mono" style="display:flex;justify-content:space-between;font-size:12px"><span>w0</span><span>64%</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:64%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div class="mono" style="display:flex;justify-content:space-between;font-size:12px"><span>w1</span><span>58%</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:58%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div class="mono" style="display:flex;justify-content:space-between;font-size:12px"><span>w2</span><span>47%</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:47%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div class="mono" style="display:flex;justify-content:space-between;font-size:12px"><span>w3</span><span>31%</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:31%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid #232B35;padding-top:12px"><div class="mono" style="display:flex;justify-content:space-between;font-size:12px"><span>NIC egress</span><span>3.5 / 10 Gbps</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:35%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+</section>
+
+<section aria-label="이 서버 viewer 품질" class="cd" style="flex:1 1 360px;min-width:0;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">이 서버 viewer 품질</h2><span class="lb">viewer loss(%) 분포 · 1,407명</span></div>
+<div style="display:flex;align-items:flex-end;gap:6px;height:110px;border-bottom:1px solid #232B35" role="img" aria-label="viewer loss 히스토그램. 0~1%가 가장 많고 5% 이상은 72명">
+<div style="flex:1;height:100px;background:#5AA9FF"></div><div style="flex:1;height:87px;background:#5AA9FF"></div><div style="flex:1;height:51px;background:#5AA9FF"></div><div style="flex:1;height:32px;background:#5AA9FF"></div><div style="flex:1;height:16px;background:#5AA9FF"></div><div style="flex:1;height:9px;background:#F5C451"></div><div style="flex:1;height:5px;background:#F5C451"></div><div style="flex:1;height:3px;background:#F5C451"></div><div style="flex:1;height:2px;background:#F5C451"></div><div style="flex:1;height:1px;background:#F5C451"></div><div style="flex:1;height:1px;background:#F5C451"></div>
+</div>
+<div class="mono" style="display:flex;gap:6px;font-size:11px;color:#9AA6B5"><span style="flex:1;text-align:center">0</span><span style="flex:1;text-align:center">1</span><span style="flex:1;text-align:center">2</span><span style="flex:1;text-align:center">3</span><span style="flex:1;text-align:center">4</span><span style="flex:1;text-align:center">5</span><span style="flex:1;text-align:center">6</span><span style="flex:1;text-align:center">7</span><span style="flex:1;text-align:center">8</span><span style="flex:1;text-align:center">9</span><span style="flex:1;text-align:center">10+</span></div>
+<div style="font-size:12px;color:#F5C451">▲ loss 5% 이상(노란 막대) 72명 · 5.1%</div>
+</section>
+
+<section aria-label="이벤트" class="cd" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:14px">
+<h2 style="margin:0;font-size:15px;font-weight:600">이벤트</h2>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.45">
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 52px">19:14</span><span><span style="color:#F5C451">▲ 경고</span> edge-sydney-1 pipe 끊김</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 52px">19:10</span><span><span style="color:#F5C451">▲ 경고</span> ch-talk-05 · host-park 입력 loss 3.2%</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 52px">18:44</span><span><span style="color:#F5C451">▲ 경고</span> edge-tokyo-1 수신 측 loss 2.4%</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 52px">18:02</span><span>방송 시작 · ch-live-0412</span></div>
+</div>
+</section>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1500}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

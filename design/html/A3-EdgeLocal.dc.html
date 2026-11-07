@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>A3 · Edge-local</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select{font-family:inherit;cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1760px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px">
+<svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"></circle><path d="M11 2v4M11 16v4M2 11h4M16 11h4"></path></svg>
+SFU Monitor
+</div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#9AA6B5">이 서버</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px;margin-top:2px">edge-tokyo-1</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;background:#1B2430;color:#E6EAF0;text-decoration:none;font-weight:500">Overview</a>
+<a href="A3-Workers.dc.html" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none">Workers</a>
+<a href="A3-Broadcasts.dc.html" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none">Broadcasts (routers)</a>
+<a href="A3-Pipe.dc.html" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none">Pipe 수신</a>
+<a href="A3-Viewers.dc.html" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none">Viewers</a>
+<a href="A3-Alerts.dc.html" style="display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none">Alerts</a>
+</div>
+<a href="O1-Overview.dc.html" style="margin-top:auto;display:flex;align-items:center;gap:6px;min-height:44px;font-size:13px">Origin 대시보드 ↗</a>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+<h1 style="margin:0;font-size:24px;font-weight:600">edge-tokyo-1</h1>
+<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span>
+<span style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">JP · 워커 4 · mediasoup v3.x</span>
+</div>
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+<span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"></circle></svg>Live · 10s 갱신</span>
+<div role="group" aria-label="시간 범위" style="display:flex;border:1px solid #232B35;border-radius:8px;overflow:hidden">
+<button style="min-height:44px;padding:0 16px;border:0;background:#1B2430;color:#E6EAF0">5m</button>
+<button style="min-height:44px;padding:0 16px;border:0;background:transparent;color:#9AA6B5">1h</button>
+<button style="min-height:44px;padding:0 16px;border:0;background:transparent;color:#9AA6B5">6h</button>
+</div>
+</div>
+</header>
+
+<div style="display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;background:#151A21;border:1px solid #232B35;border-radius:10px;padding:10px 16px;font-size:13px;color:#9AA6B5">
+<span>이 서버의 데이터만 표시합니다</span>
+<span style="display:flex;align-items:center;gap:6px;color:#4ADE9A"><svg width="8" height="8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill="#4ADE9A"></circle></svg>집계 노드 연결 정상</span>
+<span style="font-family:'IBM Plex Mono',monospace;font-size:12px">마지막 전송 2s 전</span>
+</div>
+
+<section aria-label="핵심 지표" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">
+<div style="background:#151A21;border:1px solid #232B35;border-radius:10px;padding:16px"><div style="color:#9AA6B5;font-size:12px">Viewers</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:500;margin-top:6px">703</div><div style="color:#9AA6B5;font-size:12px;margin-top:4px">consumers 1,460</div></div>
+<div style="background:#151A21;border:1px solid #3A4553;border-radius:10px;padding:16px"><div style="color:#9AA6B5;font-size:12px">Pipe 수신 loss</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:500;margin-top:6px;color:#F5C451">▲ 2.4%</div><div style="color:#9AA6B5;font-size:12px;margin-top:4px">임계치 2% 초과</div></div>
+<div style="background:#151A21;border:1px solid #3A4553;border-radius:10px;padding:16px"><div style="color:#9AA6B5;font-size:12px">Worker CPU (최대)</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:500;margin-top:6px">72<span style="font-size:14px;color:#9AA6B5"> %</span></div><div style="color:#9AA6B5;font-size:12px;margin-top:4px">w0 · 평균 56%</div></div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:10px;padding:16px"><div style="color:#9AA6B5;font-size:12px">NIC Egress</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:500;margin-top:6px">1.6<span style="font-size:14px;color:#9AA6B5"> / 10 Gbps</span></div><div style="color:#9AA6B5;font-size:12px;margin-top:4px">16% 사용</div></div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:10px;padding:16px"><div style="color:#9AA6B5;font-size:12px">Loss 5% 이상 viewer</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:500;margin-top:6px">52 <span style="font-size:14px;color:#9AA6B5">명</span></div><div style="color:#F5C451;font-size:12px;margin-top:4px">▲ 7.4% (30분 전 3.1%)</div></div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:10px;padding:16px"><div style="color:#9AA6B5;font-size:12px">추가 수용 가능</div><div style="font-family:'IBM Plex Mono',monospace;font-size:30px;font-weight:500;margin-top:6px">+380</div><div style="color:#9AA6B5;font-size:12px;margin-top:4px">CPU 80% 기준</div></div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+
+<section aria-label="Pipe 수신 손실 추이" style="flex:1 1 380px;min-width:0;background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">Pipe 수신 loss (%)</h2><span style="font-size:12px;color:#9AA6B5">origin-seoul-01 → 이 서버</span></div>
+<svg viewBox="0 0 400 210" width="100%" role="img" aria-label="최근 5분 pipe 손실률. 0.2%에서 시작해 2.4%까지 상승, 2% 임계치를 넘음" style="margin-top:12px;display:block">
+<g stroke="#232B35"><line x1="40" y1="20" x2="390" y2="20"></line><line x1="40" y1="95" x2="390" y2="95" stroke="#F5C451" stroke-dasharray="4 4"></line><line x1="40" y1="170" x2="390" y2="170"></line></g>
+<g font-family="IBM Plex Mono" font-size="11" fill="#9AA6B5"><text x="6" y="24">4%</text><text x="6" y="99">2%</text><text x="6" y="174">0</text><text x="40" y="196">-5m</text><text x="350" y="196">now</text><text x="300" y="88" fill="#F5C451">임계치</text></g>
+<polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="40,163 54,166 68,163 82,159 96,163 110,163 124,159 138,155 152,159 166,151 180,155 194,148 208,151 222,140 236,136 250,125 264,129 278,114 292,106 306,99 320,88 334,91 348,84 362,80 376,80"></polyline>
+<circle cx="376" cy="80" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"></circle>
+</svg>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px;font-size:12px">
+<div><div style="color:#9AA6B5">수신</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px">4.1 Mbps</div></div>
+<div><div style="color:#9AA6B5">jitter</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px">14 ms</div></div>
+<div><div style="color:#9AA6B5">RTT</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px">88 ms</div></div>
+<div><div style="color:#9AA6B5">상태</div><div style="font-family:'IBM Plex Mono',monospace;font-size:13px">connected</div></div>
+</div>
+</section>
+
+<section aria-label="Viewer loss 추이" style="flex:1 1 380px;min-width:0;background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">Viewer loss (%)</h2>
+<div style="display:flex;gap:14px;font-size:12px;color:#9AA6B5"><span style="display:flex;align-items:center;gap:6px"><svg width="14" height="3" aria-hidden="true"><rect width="14" height="3" fill="#5AA9FF"></rect></svg>중앙값 p50</span><span style="display:flex;align-items:center;gap:6px"><svg width="14" height="3" aria-hidden="true"><rect width="14" height="3" fill="#F5A65B"></rect></svg>상위 5% p95</span></div></div>
+<svg viewBox="0 0 400 210" width="100%" role="img" aria-label="최근 5분 viewer loss. 중앙값은 0.8%에서 2.1%로, 상위 5%는 2.6%에서 8.6%로 상승. 상승 시작 시점이 pipe loss 상승 시점과 겹침" style="margin-top:12px;display:block">
+<g stroke="#232B35"><line x1="40" y1="20" x2="390" y2="20"></line><line x1="40" y1="95" x2="390" y2="95"></line><line x1="40" y1="170" x2="390" y2="170"></line></g>
+<g font-family="IBM Plex Mono" font-size="11" fill="#9AA6B5"><text x="12" y="24">10</text><text x="18" y="99">5</text><text x="18" y="174">0</text><text x="40" y="196">-5m</text><text x="350" y="196">now</text></g>
+<polyline fill="none" stroke="#F5A65B" stroke-width="2" stroke-linejoin="round" points="40,131 54,131 68,130 82,130 96,128 110,128 124,127 138,125 152,124 166,121 180,118 194,113 208,109 222,104 236,98 250,92 264,86 278,80 292,74 306,67 320,61 334,55 348,50 362,45 376,41"></polyline>
+<polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="40,158 54,158 68,157 82,157 96,155 110,155 124,155 138,154 152,154 166,152 180,152 194,151 208,151 222,149 236,149 250,148 264,148 278,146 292,145 306,143 320,142 334,142 348,140 362,140 376,139"></polyline>
+<circle cx="376" cy="139" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"></circle><circle cx="376" cy="41" r="4" fill="#F5A65B" stroke="#151A21" stroke-width="2"></circle>
+</svg>
+<div style="font-size:12px;color:#9AA6B5;margin-top:10px;line-height:1.5">▲ 상승이 시작된 시점이 왼쪽 pipe loss가 오르기 시작한 때와 겹칩니다. viewer 개별 문제보다 <span style="color:#E6EAF0">상류(pipe) 원인</span>일 가능성이 높습니다.</div>
+</section>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+
+<section aria-label="워커" style="flex:1 1 360px;min-width:0;background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="margin:0;font-size:15px;font-weight:600">워커 부하</h2><span style="font-size:12px;color:#9AA6B5">CPU · consumers</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:12px"><span>w0 · router 1</span><span>72% · 420</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:72%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:12px"><span>w1 · router 2</span><span>70% · 556</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:70%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:12px"><span>w2 · router 1</span><span>68% · 416</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:68%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:12px"><span>w3 · router 1</span><span>12% · 68</span></div><div style="height:8px;background:#232B35;border-radius:4px"><div style="width:12%;height:8px;background:#5AA9FF;border-radius:4px"></div></div></div>
+<div style="font-size:12px;color:#9AA6B5;border-top:1px solid #232B35;padding-top:12px;line-height:1.5">w0이 여유 8%p로 가장 빡빡합니다. 새 router는 w3에 배치하는 편이 좋습니다.</div>
+</section>
+
+<section aria-label="중계 중인 방송" style="flex:2 1 520px;min-width:0;background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="margin:0;font-size:15px;font-weight:600">이 서버가 중계 중인 방송</h2><a href="#" style="font-size:13px">전체 보기</a></div>
+<div style="overflow-x:auto">
+<table style="width:100%;min-width:520px;border-collapse:collapse;font-size:13px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:8px 0;font-weight:500">방송 (router)</th><th style="font-weight:500">Worker</th><th style="font-weight:500">Viewers</th><th style="font-weight:500">Pipe 수신</th><th style="font-weight:500">Loss</th><th style="font-weight:500">RTT p50</th></tr></thead>
+<tbody style="font-family:'IBM Plex Mono',monospace">
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">ch-live-0412</td><td>w0 · w2</td><td>402</td><td>4.1 Mbps</td><td style="color:#F5C451">▲ 2.4%</td><td>118ms</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">ch-news-12</td><td>w1</td><td>171</td><td>2.8 Mbps</td><td>0.3%</td><td>64ms</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">ch-sports-03</td><td>w1</td><td>96</td><td>5.2 Mbps</td><td>0.2%</td><td>61ms</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">ch-music-08</td><td>w3</td><td>34</td><td>3.0 Mbps</td><td>0.1%</td><td>59ms</td></tr>
+</tbody></table></div>
+</section>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+
+<section aria-label="Viewer 품질 분포" style="flex:3 1 520px;min-width:0;background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">Viewer 품질 분포</h2><span style="font-size:12px;color:#9AA6B5">수신 loss(%) 구간별 viewer 수 · 703명</span></div>
+<div>
+<div style="display:flex;align-items:flex-end;gap:6px;height:120px;border-bottom:1px solid #232B35" role="img" aria-label="viewer loss 히스토그램. loss 5% 이상은 52명">
+<div style="flex:1;height:108px;background:#5AA9FF"></div><div style="flex:1;height:86px;background:#5AA9FF"></div><div style="flex:1;height:50px;background:#5AA9FF"></div><div style="flex:1;height:29px;background:#5AA9FF"></div><div style="flex:1;height:21px;background:#5AA9FF"></div><div style="flex:1;height:6px;background:#F5C451"></div><div style="flex:1;height:5px;background:#F5C451"></div><div style="flex:1;height:4px;background:#F5C451"></div><div style="flex:1;height:3px;background:#F5C451"></div><div style="flex:1;height:3px;background:#F5C451"></div><div style="flex:1;height:2px;background:#F5C451"></div>
+</div>
+<div style="display:flex;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#9AA6B5;margin-top:6px"><span style="flex:1;text-align:center">0</span><span style="flex:1;text-align:center">1</span><span style="flex:1;text-align:center">2</span><span style="flex:1;text-align:center">3</span><span style="flex:1;text-align:center">4</span><span style="flex:1;text-align:center">5</span><span style="flex:1;text-align:center">6</span><span style="flex:1;text-align:center">7</span><span style="flex:1;text-align:center">8</span><span style="flex:1;text-align:center">9</span><span style="flex:1;text-align:center">10+</span></div>
+<div style="font-size:12px;color:#F5C451;margin-top:10px">▲ loss 5% 이상(노란 막대) 52명 · 7.4% — 30분 전 3.1%보다 높음</div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:24px">
+<div style="flex:1 1 240px;min-width:0">
+<div style="font-size:12px;color:#9AA6B5;margin-bottom:8px">수신 화질 레이어</div>
+<div style="display:flex;gap:2px;height:14px"><div style="flex:48;background:#5AA9FF;border-radius:3px 0 0 3px"></div><div style="flex:32;background:#2F6FB3"></div><div style="flex:20;background:#1F4A78;border-radius:0 3px 3px 0"></div></div>
+<div style="display:flex;gap:14px;font-size:12px;margin-top:8px;flex-wrap:wrap"><span>High 48%</span><span>Mid 32%</span><span>Low 20%</span></div>
+</div>
+<div style="flex:1 1 240px;min-width:0;display:flex;flex-direction:column;gap:8px;font-size:12px">
+<div style="color:#9AA6B5">접속 환경별 loss p50</div>
+<div style="display:flex;justify-content:space-between"><span>유선</span><span style="font-family:'IBM Plex Mono',monospace">0.9%</span></div>
+<div style="display:flex;justify-content:space-between"><span>Wi-Fi</span><span style="font-family:'IBM Plex Mono',monospace">1.4%</span></div>
+<div style="display:flex;justify-content:space-between"><span>모바일 (LTE/5G)</span><span style="font-family:'IBM Plex Mono',monospace">3.2%</span></div>
+</div>
+</div>
+</section>
+
+<section aria-label="상태가 나쁜 viewer와 이벤트" style="flex:2 1 400px;min-width:0;display:flex;flex-direction:column;gap:16px">
+<div style="background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px">
+<h2 style="margin:0 0 12px;font-size:15px;font-weight:600">가장 나쁜 viewer 4</h2>
+<div style="overflow-x:auto"><table style="width:100%;min-width:340px;border-collapse:collapse;font-size:12.5px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:6px 0;font-weight:500">Viewer</th><th style="font-weight:500">Freeze</th><th style="font-weight:500">Loss</th><th style="font-weight:500">RTT</th><th style="font-weight:500">환경</th></tr></thead>
+<tbody style="font-family:'IBM Plex Mono',monospace">
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">v-8f3a</td><td style="color:#FF8F8F">▲ 4/분</td><td>9.1%</td><td>310ms</td><td>LTE</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">v-21bc</td><td style="color:#FF8F8F">▲ 3/분</td><td>7.4%</td><td>240ms</td><td>Wi-Fi</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">v-a4f2</td><td style="color:#F5C451">▲ 2/분</td><td>6.0%</td><td>205ms</td><td>Wi-Fi</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">v-d210</td><td style="color:#F5C451">▲ 2/분</td><td>5.5%</td><td>198ms</td><td>유선</td></tr>
+</tbody></table></div>
+</div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:15px;font-weight:600">이벤트 (이 서버)</h2>
+<div style="display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.45">
+<div style="display:flex;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;color:#9AA6B5;flex:0 0 52px">18:44</span><span><span style="color:#F5C451">▲ 경고</span> pipe 수신 loss 2.4% (3분 지속)</span></div>
+<div style="display:flex;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;color:#9AA6B5;flex:0 0 52px">18:41</span><span>pipe 수신 loss 1% 초과</span></div>
+<div style="display:flex;gap:12px"><span style="font-family:'IBM Plex Mono',monospace;color:#9AA6B5;flex:0 0 52px">18:02</span><span>router 생성 · ch-live-0412 (w0)</span></div>
+</div>
+</div>
+</section>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1760}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

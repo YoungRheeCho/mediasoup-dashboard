@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+design
+docs
+deploy
+*.md
+design-backup
+.taste-skill

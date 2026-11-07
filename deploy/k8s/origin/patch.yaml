@@ -1,0 +1,124 @@
+# mediasoup-origin Deployment에 더하는 내용 (edge/patch.yaml과 같은 구성, MSDASH_MODE=origin).
+# edge는 heartbeat로 스스로 등록되므로 edge 목록을 적을 필요는 없다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mediasoup-origin
+  namespace: qos
+spec:
+  template:
+    spec:
+      volumes:
+        - name: msdash-hook
+          configMap:
+            name: msdash-hook
+            defaultMode: 0444
+        - name: msdash-sock
+          emptyDir: {}
+        - name: msdash-db
+          hostPath:
+            path: /var/lib/msdash/origin
+            type: DirectoryOrCreate
+
+      containers:
+        - name: mediasoup-server
+          env:
+            - name: NODE_OPTIONS
+              value: --require /dashboard-hook/msdash-hook.cjs
+            - name: MSDASH_HOOK_SOCKET
+              value: /var/run/msdash/hook.sock
+          volumeMounts:
+            - name: msdash-hook
+              mountPath: /dashboard-hook
+              readOnly: true
+            - name: msdash-sock
+              mountPath: /var/run/msdash
+
+        - name: msdash
+          image: msdash-sidecar
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: MSDASH_MODE
+              value: origin
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: SERVER_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: MSDASH_HTTP_PORT
+              value: "18080"
+            - name: MSDASH_PUBLIC_URL
+              value: http://$(SERVER_IP):18080
+            - name: MSDASH_HOOK_SOCKET
+              value: /var/run/msdash/hook.sock
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: msdash-db
+                  key: password
+            - name: MSDASH_DATABASE_URL
+              value: postgres://postgres:$(DB_PASSWORD)@127.0.0.1:55432/msdash
+            - name: MSDASH_NIC_CAPACITY_BPS
+              value: "1000000000"
+            - name: MSDASH_MOCK
+              value: "1"
+          ports:
+            - name: dashboard
+              containerPort: 18080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 18080
+            periodSeconds: 10
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          volumeMounts:
+            - name: msdash-sock
+              mountPath: /var/run/msdash
+
+        - name: msdash-db
+          image: timescale/timescaledb:2.17.2-pg16
+          imagePullPolicy: IfNotPresent
+          args: ["-c", "port=55432", "-c", "listen_addresses=127.0.0.1", "-c", "shared_buffers=128MB"]
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: msdash-db
+                  key: password
+            - name: POSTGRES_DB
+              value: msdash
+            - name: PGPORT
+              value: "55432"
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-h", "127.0.0.1", "-p", "55432", "-U", "postgres"]
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: msdash-db
+              mountPath: /var/lib/postgresql/data

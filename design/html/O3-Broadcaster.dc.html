@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Origin · Broadcaster 상세</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select,input{font-family:inherit}
+button,select{cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.lb{font-size:12px;color:#9AA6B5}
+.ln{display:flex;gap:2px;height:22px;flex:1;min-width:0}
+.ln div{display:flex;align-items:center;justify-content:center;font-size:11px;overflow:hidden;white-space:nowrap;color:#0E1116}
+.lr{display:flex;align-items:center;gap:12px}
+.lr>span{flex:0 0 96px;font-size:12px;color:#9AA6B5}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1700px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #2E5E94;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#7DBBFF;font-weight:600;letter-spacing:0.04em">ORIGIN</div><div class="mono" style="font-size:13px;margin-top:2px">origin-seoul-01</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv" href="O1-Overview.dc.html">Overview</a>
+<a class="nv on" href="O2-Rooms.dc.html">Rooms &amp; Broadcasters</a>
+<a class="nv" href="O4-Edges.dc.html">Connected Edges</a>
+<a class="nv" href="#">Workers</a>
+<a class="nv" href="#">Viewers</a>
+<a class="nv" href="#">Alerts</a>
+</div>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:8px">
+<nav aria-label="경로" class="mono" style="font-size:12px;color:#9AA6B5"><a href="O2-Rooms.dc.html">Rooms &amp; Broadcasters</a> › ch-live-0412 › host-kim</nav>
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 class="mono" style="margin:0;font-size:24px;font-weight:500">host-kim</h1><span style="color:#4ADE9A;font-weight:700;font-size:12px;border:1.5px solid #4ADE9A;border-radius:6px;padding:2px 8px">● 송출 중 · 정상</span><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:#9AA6B5"><span>방송 <span class="mono" style="color:#E6EAF0">ch-live-0412</span></span><span>Router <span class="mono" style="color:#E6EAF0">w0</span></span><span>접속 <span class="mono" style="color:#E6EAF0">01:16:20</span></span><span>유선 · Chrome 129 / Windows 11</span></div>
+</div>
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 2s 갱신</span>
+<div role="group" aria-label="시간 범위" style="display:flex;border:1px solid #232B35;border-radius:8px;overflow:hidden"><button style="min-height:44px;padding:0 16px;border:0;background:#1B2430;color:#E6EAF0">5m</button><button style="min-height:44px;padding:0 16px;border:0;background:transparent;color:#9AA6B5">1h</button><button style="min-height:44px;padding:0 16px;border:0;background:transparent;color:#9AA6B5">방송 전체</button></div></div>
+</header>
+
+<section aria-label="진단" class="cd" style="display:flex;flex-direction:column;gap:10px">
+<h2 style="margin:0;font-size:15px;font-weight:600">진단 요약</h2>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5">
+<div style="display:flex;gap:10px"><span style="color:#4ADE9A;flex:0 0 auto">✓</span><span><span style="font-weight:600">입력은 정상입니다</span> — 전송 loss 0.1%, RTT 24ms, 인코더 30fps를 유지하고 있습니다.</span></div>
+<div style="display:flex;gap:10px"><span style="color:#9AA6B5;flex:0 0 auto">●</span><span><span style="font-weight:600">대역폭 제한이 1회 있었습니다</span> — 19:15:50부터 12초간 송출 쪽 대역폭이 줄어 High 레이어가 잠시 중단됐다가 자동 복구됐습니다.</span></div>
+<div style="display:flex;gap:10px"><span style="color:#F5C451;flex:0 0 auto">▲</span><span><span style="font-weight:600">edge-tokyo-1의 수신 손실은 입력 때문이 아닙니다</span> — origin이 보내는 4.2 Mbps는 모든 edge에 동일하게 나가고 있고, 손실은 tokyo 구간에서만 보고됩니다.</span></div>
+</div>
+</section>
+
+<section aria-label="송출 지표" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+<div class="cd" style="padding:16px"><div class="lb">송출 상태</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px;color:#4ADE9A">● 송출 중</div><div class="lb" style="margin-top:4px">audio + video 3 레이어</div></div>
+<div class="cd" style="padding:16px"><div class="lb">입력 bitrate</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">4.2 <span style="font-size:13px;color:#9AA6B5">Mbps</span></div><div class="lb" style="margin-top:4px">브라우저 추정 가용 5.8 Mbps</div></div>
+<div class="cd" style="padding:16px"><div class="lb">인코더 fps</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">30 <span style="font-size:13px;color:#9AA6B5">/ 30</span></div><div class="lb" style="margin-top:4px">CPU 제한 없음</div></div>
+<div class="cd" style="padding:16px"><div class="lb">해상도</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">1280×720</div><div class="lb" style="margin-top:4px">카메라 설정과 동일</div></div>
+<div class="cd" style="padding:16px"><div class="lb">전송 loss / RTT</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">0.1% <span style="font-size:13px;color:#9AA6B5">/ 24ms</span></div><div class="lb" style="margin-top:4px">jitter 3ms</div></div>
+<div class="cd" style="padding:16px"><div class="lb">Keyframe 간격</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">2.0 s</div><div class="lb" style="margin-top:4px">PLI 수신 3회/분</div></div>
+</section>
+
+<section aria-label="송출 타임라인" class="cd" style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">타임라인 (최근 5분)</h2>
+<div style="display:flex;gap:14px;font-size:12px;color:#9AA6B5;flex-wrap:wrap"><span>■ <span style="color:#5AA9FF">정상</span></span><span>■ <span style="color:#F5C451">대역폭 제한 / 레이어 중단</span></span></div></div>
+
+<div class="lr"><span>송출 상태</span><div class="ln" role="img" aria-label="송출 상태. 5분 내내 송출 중"><div style="flex:1;background:#5AA9FF;border-radius:3px">송출 중</div></div></div>
+<div class="lr"><span>품질 제한 사유</span><div class="ln" role="img" aria-label="품질 제한 사유. 140초 없음, 12초 대역폭, 이후 없음"><div style="flex:140;background:#2A3340;color:#9AA6B5;border-radius:3px 0 0 3px">없음</div><div style="flex:12;background:#F5C451"></div><div style="flex:148;background:#2A3340;color:#9AA6B5;border-radius:0 3px 3px 0">없음</div></div></div>
+<div class="lr"><span>High 레이어</span><div class="ln" role="img" aria-label="High 레이어. 140초 활성, 12초 중단, 이후 활성"><div style="flex:140;background:#5AA9FF;border-radius:3px 0 0 3px">활성</div><div style="flex:12;background:#F5C451"></div><div style="flex:148;background:#5AA9FF;border-radius:0 3px 3px 0">활성</div></div></div>
+<div class="lr"><span>연결</span><div class="ln" role="img" aria-label="연결 상태. 5분 내내 connected"><div style="flex:1;background:#2A3A33;color:#4ADE9A;border-radius:3px">connected</div></div></div>
+<div class="lr"><span></span><div class="mono" style="flex:1;display:flex;justify-content:space-between;font-size:11px;color:#9AA6B5"><span>19:13:30</span><span>19:14:30</span><span>19:15:30</span><span>19:16:30</span><span>19:17:30</span><span>19:18:30</span></div></div>
+</section>
+
+<section aria-label="지표 추이" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+
+<div class="cd" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="margin:0;font-size:14px;font-weight:600">입력 bitrate (Mbps)</h3><span class="mono" style="font-size:13px">4.2</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="입력 bitrate는 4.2 Mbps 부근, 중간에 3.6까지 잠깐 하락" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="18" y="16">6</text><text x="18" y="56">3</text><text x="18" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,36 58,36 80,37 102,36 124,36 146,39 168,44 190,36 212,36 234,37 256,36 278,36 300,36"/><circle cx="300" cy="36" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg></div>
+
+<div class="cd" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="margin:0;font-size:14px;font-weight:600">전송 loss (%)</h3><span class="mono" style="font-size:13px">0.1</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="전송 loss는 0.1% 부근, 중간에 1.2%까지 잠깐 상승" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="18" y="16">2</text><text x="18" y="56">1</text><text x="18" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,88 58,88 80,88 102,84 124,88 146,88 168,44 190,80 212,88 234,88 256,88 278,88 300,88"/><circle cx="300" cy="88" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg></div>
+
+<div class="cd" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="margin:0;font-size:14px;font-weight:600">RTT (ms)</h3><span class="mono" style="font-size:13px">24</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="RTT는 24ms 부근, 중간에 48ms까지 잠깐 상승" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="6" y="16">100</text><text x="12" y="56">50</text><text x="24" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,73 58,73 80,72 102,73 124,73 146,71 168,54 190,68 212,73 234,73 256,72 278,73 300,73"/><circle cx="300" cy="73" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg></div>
+
+<div class="cd" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="margin:0;font-size:14px;font-weight:600">인코더 fps</h3><span class="mono" style="font-size:13px">30</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="인코더 fps는 30 유지, 중간에 24까지 잠깐 하락" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="12" y="16">30</text><text x="12" y="56">15</text><text x="24" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,12 58,12 80,12 102,12 124,12 146,12 168,28 190,15 212,12 234,12 256,12 278,12 300,12"/><circle cx="300" cy="12" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg></div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+
+<section aria-label="이벤트" class="cd" style="flex:2 1 380px;min-width:0;display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:15px;font-weight:600">이 broadcaster의 이벤트</h2>
+<div style="display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.45">
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">19:16:03</span><span>keyframe 요청(PLI) 3회 수신 · High 레이어 복구 직후</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">19:16:02</span><span>High 레이어 복구</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">19:15:50</span><span><span style="color:#F5C451">▲ 대역폭 제한</span> 시작 · High 레이어 중단 (12s)</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">18:02:10</span><span>접속 및 송출 시작 (audio, video ×3)</span></div>
+</div>
+</section>
+
+<section aria-label="상세 값" class="cd" style="flex:3 1 480px;min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px">
+<div style="display:flex;flex-direction:column;gap:10px"><div class="lb" style="border-bottom:1px solid #232B35;padding-bottom:6px">서버가 본 값 (producer)</div>
+<div class="kv"><span class="lb">입력 패킷 손실 (누적)</span><span class="mono">0.1%</span></div>
+<div class="kv"><span class="lb">High / Mid / Low</span><span class="mono">2.6 / 1.1 / 0.5 Mbps</span></div>
+<div class="kv"><span class="lb">RTP jitter</span><span class="mono">3 ms</span></div>
+<div class="kv"><span class="lb">NACK 수신 / 분</span><span class="mono">8</span></div>
+<div class="kv"><span class="lb">PLI 수신 / 분</span><span class="mono">3</span></div>
+<div class="kv"><span class="lb">Transport</span><span class="mono">send · connected</span></div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div class="lb" style="border-bottom:1px solid #232B35;padding-bottom:6px">브라우저가 보고한 값</div>
+<div class="kv"><span class="lb">품질 제한 사유</span><span class="mono">none</span></div>
+<div class="kv"><span class="lb">제한 누적 (bandwidth / cpu)</span><span class="mono">12 s / 0 s</span></div>
+<div class="kv"><span class="lb">가용 송신 대역폭</span><span class="mono">5.8 Mbps</span></div>
+<div class="kv"><span class="lb">인코더</span><span class="mono">VP8 · software</span></div>
+<div class="kv"><span class="lb">카메라</span><span class="mono">1280×720 @30</span></div>
+<div class="kv"><span class="lb">마이크</span><span class="mono">활성 · opus 38 kbps</span></div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px"><div class="lb" style="border-bottom:1px solid #232B35;padding-bottom:6px">접속 환경 / 전달</div>
+<div class="kv"><span class="lb">네트워크</span><span class="mono">유선</span></div>
+<div class="kv"><span class="lb">브라우저 / OS</span><span class="mono">Chrome 129 / Win 11</span></div>
+<div class="kv"><span class="lb">지역</span><span class="mono">KR · IP 마스킹</span></div>
+<div class="kv"><span class="lb">이 서버 viewers</span><span class="mono">612</span></div>
+<div class="kv"><span class="lb">전달 edge</span><span class="mono">6 (모두 4.2 Mbps)</span></div>
+<a href="O4-Edges.dc.html" style="display:inline-flex;align-items:center;min-height:44px;font-size:13px;font-weight:500">Connected Edges 보기 →</a></div>
+</section>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1700}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

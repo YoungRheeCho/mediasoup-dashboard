@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>A3 · Pipe 수신</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select{font-family:inherit;cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1400px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#9AA6B5">이 서버</div><div class="mono" style="font-size:13px;margin-top:2px">edge-tokyo-1</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv" href="A3-EdgeLocal.dc.html">Overview</a>
+<a class="nv" href="A3-Workers.dc.html">Workers</a>
+<a class="nv" href="A3-Broadcasts.dc.html">Broadcasts (routers)</a>
+<a class="nv on" href="A3-Pipe.dc.html">Pipe 수신</a>
+<a class="nv" href="A3-Viewers.dc.html">Viewers</a>
+<a class="nv" href="A3-Alerts.dc.html">Alerts</a>
+</div>
+<a href="O1-Overview.dc.html" style="margin-top:auto;display:flex;align-items:center;min-height:44px;font-size:13px">Origin 대시보드 ↗</a>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 style="margin:0;font-size:24px;font-weight:600">Pipe 수신</h1><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 10s 갱신</span>
+<div role="group" aria-label="시간 범위" style="display:flex;border:1px solid #232B35;border-radius:8px;overflow:hidden"><button style="min-height:44px;padding:0 16px;border:0;background:#1B2430;color:#E6EAF0">5m</button><button style="min-height:44px;padding:0 16px;border:0;background:transparent;color:#9AA6B5">1h</button><button style="min-height:44px;padding:0 16px;border:0;background:transparent;color:#9AA6B5">6h</button></div></div>
+</header>
+<p style="margin:-8px 0 0;color:#9AA6B5;line-height:1.6;max-width:760px">origin에서 이 서버로 들어오는 PipeTransport 구간의 품질입니다. 이 구간이 나빠지면 이 서버의 모든 viewer가 영향을 받으므로, 가장 먼저 확인해야 하는 화면입니다.</p>
+
+<section aria-label="Pipe 연결 정보" class="cd" style="display:flex;flex-wrap:wrap;gap:16px 40px;align-items:center">
+<div><div style="font-size:12px;color:#9AA6B5">상태</div><div class="mono" style="color:#4ADE9A">● connected</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">상대</div><div class="mono">origin-seoul-01</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">경로</div><div class="mono">192.0.2.30:42088 → 192.0.2.40:42310</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">SRTP</div><div class="mono">off (사설망)</div></div>
+<div><div style="font-size:12px;color:#9AA6B5">pipe 수</div><div class="mono">router별 1개 · 총 5</div></div>
+</section>
+
+<section aria-label="구간 품질 추이" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+
+<div class="cd" style="padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="margin:0;font-size:14px;font-weight:600">Loss (%)</h2><span class="mono" style="color:#F5C451;font-size:13px">▲ 2.4</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="Loss 5분간 0.2%에서 2.4%로 상승" style="margin-top:8px;display:block">
+<g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52" stroke="#F5C451" stroke-dasharray="4 4"/><line x1="36" y1="92" x2="304" y2="92"/></g>
+<g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="6" y="16">4</text><text x="6" y="56">2</text><text x="6" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g>
+<polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,88 58,88 80,86 102,84 124,82 146,76 168,74 190,68 212,62 234,54 256,48 278,46 300,44"/>
+<circle cx="300" cy="44" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/>
+</svg>
+</div>
+
+<div class="cd" style="padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="margin:0;font-size:14px;font-weight:600">RTT (ms)</h2><span class="mono" style="color:#F5C451;font-size:13px">▲ 88</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="RTT 5분간 42ms에서 88ms로 상승" style="margin-top:8px;display:block">
+<g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g>
+<g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="6" y="16">120</text><text x="12" y="56">60</text><text x="24" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g>
+<polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,64 58,64 80,63 102,63 124,61 146,57 168,53 190,48 212,44 234,39 256,36 278,33 300,33"/>
+<circle cx="300" cy="33" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/>
+</svg>
+</div>
+
+<div class="cd" style="padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="margin:0;font-size:14px;font-weight:600">Jitter (ms)</h2><span class="mono" style="font-size:13px">14</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="Jitter 5분간 4ms에서 14ms로 상승" style="margin-top:8px;display:block">
+<g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g>
+<g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="12" y="16">20</text><text x="12" y="56">10</text><text x="24" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g>
+<polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,76 58,76 80,72 102,72 124,68 146,68 168,60 190,56 212,52 234,44 256,40 278,36 300,36"/>
+<circle cx="300" cy="36" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/>
+</svg>
+</div>
+
+<div class="cd" style="padding:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><h2 style="margin:0;font-size:14px;font-weight:600">수신 bitrate (Mbps)</h2><span class="mono" style="font-size:13px">4.1</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="수신 bitrate는 4.1에서 4.2 Mbps로 안정적" style="margin-top:8px;display:block">
+<g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g>
+<g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="18" y="16">6</text><text x="18" y="56">3</text><text x="18" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g>
+<polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,25 58,25 80,26 102,25 124,25 146,26 168,25 190,26 212,26 234,28 256,26 278,26 300,26"/>
+<circle cx="300" cy="26" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/>
+</svg>
+</div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+
+<section aria-label="스트림별 RTP 통계" class="cd" style="flex:3 1 520px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px"><h3 style="margin:0;font-size:15px;font-weight:600">스트림별 수신 통계</h3><span style="font-size:12px;color:#9AA6B5">ch-live-0412 · RTP inbound</span></div>
+<div style="overflow-x:auto"><table style="width:100%;min-width:520px;border-collapse:collapse;font-size:12.5px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:6px 0;font-weight:500">Stream</th><th style="font-weight:500">Bitrate</th><th style="font-weight:500">Lost</th><th style="font-weight:500">Jitter</th><th style="font-weight:500">NACK / 분</th><th style="font-weight:500">PLI / 분</th></tr></thead>
+<tbody class="mono">
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">audio · opus</td><td>38 kbps</td><td>0.6%</td><td>6 ms</td><td>42</td><td>—</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">video · High</td><td>2.6 Mbps</td><td style="color:#F5C451">▲ 2.9%</td><td>16 ms</td><td style="color:#F5C451">▲ 310</td><td style="color:#F5C451">▲ 14</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">video · Mid</td><td>1.1 Mbps</td><td>2.2%</td><td>13 ms</td><td>140</td><td>6</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">video · Low</td><td>0.5 Mbps</td><td>1.7%</td><td>11 ms</td><td>64</td><td>3</td></tr>
+</tbody></table></div>
+<div style="font-size:12px;color:#9AA6B5;margin-top:10px;line-height:1.5">패킷이 큰 High 레이어에서 손실이 가장 큽니다. 대역폭 한계나 혼잡 가능성을 의심해볼 수 있습니다.</div>
+</section>
+
+<section aria-label="Origin 측과 비교" class="cd" style="flex:2 1 320px;min-width:0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h3 style="margin:0;font-size:15px;font-weight:600">Origin 측 값과 비교</h3><span style="font-size:12px;color:#4ADE9A">집계 노드 연결됨</span></div>
+<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px 18px;font-size:13px;align-items:baseline">
+<span style="color:#9AA6B5;font-size:12px"></span><span style="color:#9AA6B5;font-size:12px">Origin 송신</span><span style="color:#9AA6B5;font-size:12px">여기 수신</span>
+<span>Bitrate</span><span class="mono">4.2 Mbps</span><span class="mono">4.1 Mbps</span>
+<span>Loss</span><span class="mono">0.0%</span><span class="mono" style="color:#F5C451">▲ 2.4%</span>
+<span>RTT</span><span class="mono">—</span><span class="mono">88 ms</span>
+</div>
+<div style="font-size:12px;color:#9AA6B5;line-height:1.5;border-top:1px solid #232B35;padding-top:12px">origin은 정상적으로 내보내는데 여기서만 손실이 보입니다. 문제는 origin이나 이 서버가 아니라 <span style="color:#E6EAF0">두 서버 사이 네트워크 구간</span>일 가능성이 큽니다.</div>
+</section>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1400}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

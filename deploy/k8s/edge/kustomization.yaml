@@ -1,0 +1,25 @@
+# edge 대시보드 overlay. 원본 매니페스트는 수정하지 않고 참조만 한다.
+# 적용 (원본이 이 디렉터리 밖에 있어 load-restrictor 옵션이 필요하다):
+#   kubectl kustomize --load-restrictor=LoadRestrictionsNone deploy/k8s/edge | kubectl apply -f -
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: qos
+
+resources:
+  # 원본 경로: mediasoup-dashboard와 qos가 같은 폴더에 있다고 가정한다. 다르면 이 줄만 고친다.
+  - ../../../../qos/network/mediasoup-edge.yaml
+
+# 훅은 이미지에 넣지 않고 ConfigMap으로 mediasoup 서버 컨테이너에 마운트한다.
+# 파일이 바뀌면 이름 해시가 바뀌어 Pod가 새로 뜬다.
+configMapGenerator:
+  - name: msdash-hook
+    files:
+      - msdash-hook.cjs=../../../hook/msdash-hook.cjs
+
+patches:
+  - path: patch.yaml
+
+images:
+  - name: msdash-sidecar
+    newName: ghcr.io/CHANGE-ME/mediasoup-dashboard # ← 빌드해서 올린 이미지
+    newTag: "0.1.0"

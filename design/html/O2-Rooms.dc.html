@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Origin · Rooms &amp; Broadcasters</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select,input{font-family:inherit}
+button,select{cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.lb{font-size:12px;color:#9AA6B5}
+.bl{display:flex;flex-direction:column;gap:4px;min-height:44px;justify-content:center;padding:8px 12px;border-radius:8px;border:1px solid transparent;color:#E6EAF0;text-decoration:none}
+.bl.on{background:#1B2430;border-color:#2E3A49}
+.kv{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1500px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #2E5E94;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#7DBBFF;font-weight:600;letter-spacing:0.04em">ORIGIN</div><div class="mono" style="font-size:13px;margin-top:2px">origin-seoul-01</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv" href="O1-Overview.dc.html">Overview</a>
+<a class="nv on" href="O2-Rooms.dc.html">Rooms &amp; Broadcasters</a>
+<a class="nv" href="O4-Edges.dc.html">Connected Edges</a>
+<a class="nv" href="#">Workers</a>
+<a class="nv" href="#">Viewers</a>
+<a class="nv" href="#">Alerts</a>
+</div>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 style="margin:0;font-size:24px;font-weight:600">Rooms &amp; Broadcasters</h1><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 10s 갱신</span>
+</header>
+<p style="margin:-8px 0 0;color:#9AA6B5;line-height:1.6;max-width:780px">방송(room) 하나에 broadcaster가 여러 명일 수 있습니다. 방송을 고르면 broadcaster별 입력 상태와, 이 방송을 받는 edge를 볼 수 있습니다.</p>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+
+<section aria-label="방송 목록" class="cd" style="flex:0 1 280px;min-width:240px;padding:12px;display:flex;flex-direction:column;gap:4px">
+<div class="lb" style="padding:6px 12px">방송 5</div>
+<a class="bl on" href="#"><span class="mono" style="font-size:13px">ch-live-0412</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>broadcaster 2 · viewer 612</span><span style="color:#4ADE9A">✓</span></span></a>
+<a class="bl" href="#"><span class="mono" style="font-size:13px">ch-news-12</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>broadcaster 1 · viewer 240</span><span style="color:#4ADE9A">✓</span></span></a>
+<a class="bl" href="#"><span class="mono" style="font-size:13px">ch-sports-03</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>broadcaster 1 · viewer 410</span><span style="color:#4ADE9A">✓</span></span></a>
+<a class="bl" href="#"><span class="mono" style="font-size:13px">ch-music-08</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>broadcaster 1 · viewer 90</span><span style="color:#4ADE9A">✓</span></span></a>
+<a class="bl" href="#"><span class="mono" style="font-size:13px">ch-talk-05</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>broadcaster 1 · viewer 55</span><span style="color:#F5C451">▲</span></span></a>
+</section>
+
+<div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:16px">
+
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between">
+<h2 class="mono" style="margin:0;font-size:20px;font-weight:500">ch-live-0412</h2>
+<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#9AA6B5"><span>경과 <span class="mono" style="color:#E6EAF0">01:16:30</span></span><span>이 서버 viewers <span class="mono" style="color:#E6EAF0">612</span></span><span>전달 edge <span class="mono" style="color:#E6EAF0">6</span></span></div>
+</div>
+
+<section aria-label="Broadcasters" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+
+<article class="cd" style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px"><h3 class="mono" style="margin:0;font-size:15px;font-weight:500">host-kim</h3><span style="color:#4ADE9A;font-size:12px">● 송출 중</span></div><span class="lb">접속 01:16:20</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px">
+<div><div class="lb">전송 RTT</div><div class="mono" style="font-size:18px">24 ms</div></div>
+<div><div class="lb">입력 bitrate</div><div class="mono" style="font-size:18px">4.2 Mbps</div></div>
+<div><div class="lb">인코더 fps</div><div class="mono" style="font-size:18px">30 / 30</div></div>
+<div><div class="lb">전송 loss</div><div class="mono" style="font-size:18px">0.1%</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px"><div class="lb">Simulcast 레이어</div>
+<div class="kv"><span class="mono">High 720p</span><span class="mono">2.6 Mbps</span></div><div style="height:6px;background:#232B35;border-radius:3px"><div style="width:100%;height:6px;background:#5AA9FF;border-radius:3px"></div></div>
+<div class="kv"><span class="mono">Mid 360p</span><span class="mono">1.1 Mbps</span></div><div style="height:6px;background:#232B35;border-radius:3px"><div style="width:42%;height:6px;background:#5AA9FF;border-radius:3px"></div></div>
+<div class="kv"><span class="mono">Low 180p</span><span class="mono">0.5 Mbps</span></div><div style="height:6px;background:#232B35;border-radius:3px"><div style="width:19%;height:6px;background:#5AA9FF;border-radius:3px"></div></div></div>
+<a href="O3-Broadcaster.dc.html" style="display:inline-flex;align-items:center;min-height:44px;font-weight:500">송출 상세 보기 →</a>
+</article>
+
+<article class="cd" style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px"><h3 class="mono" style="margin:0;font-size:15px;font-weight:500">guest-lee</h3><span class="lb">○ 대기 (송출 없음)</span></div><span class="lb">접속 00:31:10</span></div>
+<div style="font-size:13px;color:#9AA6B5;line-height:1.6">접속은 되어 있지만 마이크와 카메라가 꺼져 있어 producer가 없습니다. 송출을 시작하면 이 카드에 입력 상태가 표시됩니다.</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px">
+<div><div class="lb">Transport</div><div class="mono" style="font-size:14px">send · connected</div></div>
+<div><div class="lb">RTT</div><div class="mono" style="font-size:14px">31 ms</div></div>
+<div><div class="lb">환경</div><div class="mono" style="font-size:14px">Wi-Fi · Safari 17</div></div>
+<div><div class="lb">Producers</div><div class="mono" style="font-size:14px">0</div></div>
+</div>
+</article>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+
+<section aria-label="입력 bitrate 추이" class="cd" style="flex:1 1 320px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h3 style="margin:0;font-size:15px;font-weight:600">입력 bitrate (Mbps)</h3><span class="lb">host-kim · 최근 5분</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="host-kim 입력 bitrate는 4.2 Mbps 부근에서 안정적이며 중간에 3.6까지 잠깐 하락" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="18" y="16">6</text><text x="18" y="56">3</text><text x="18" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,36 58,36 80,37 102,36 124,36 146,39 168,44 190,36 212,36 234,37 256,36 278,36 300,36"/><circle cx="300" cy="36" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg>
+</section>
+
+<section aria-label="전달 edge" class="cd" style="flex:2 1 460px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px"><h3 style="margin:0;font-size:15px;font-weight:600">이 방송을 받는 edge 6</h3><span class="lb">origin → edge pipe</span></div>
+<div style="overflow-x:auto"><table style="width:100%;min-width:420px;border-collapse:collapse;font-size:13px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:6px 0;font-weight:500">Edge</th><th style="font-weight:500">송신</th><th style="font-weight:500">수신 측 보고 loss</th><th style="font-weight:500;text-align:right">대시보드</th></tr></thead>
+<tbody class="mono">
+<tr style="border-top:1px solid #232B35"><td style="padding:0;min-height:44px">edge-tokyo-1</td><td>4.2 Mbps</td><td style="color:#F5C451">▲ 2.4%</td><td style="text-align:right"><a href="https://edge-tokyo-1.example.net/" target="_blank" rel="noopener" aria-label="edge-tokyo-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;min-height:44px;font-family:'IBM Plex Sans',sans-serif">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0">edge-seoul-1</td><td>4.2 Mbps</td><td>0.1%</td><td style="text-align:right"><a href="https://edge-seoul-1.example.net/" target="_blank" rel="noopener" aria-label="edge-seoul-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;min-height:44px;font-family:'IBM Plex Sans',sans-serif">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0">edge-seoul-2</td><td>4.2 Mbps</td><td>0.0%</td><td style="text-align:right"><a href="https://edge-seoul-2.example.net/" target="_blank" rel="noopener" aria-label="edge-seoul-2 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;min-height:44px;font-family:'IBM Plex Sans',sans-serif">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0">edge-busan-1</td><td>4.2 Mbps</td><td>0.2%</td><td style="text-align:right"><a href="https://edge-busan-1.example.net/" target="_blank" rel="noopener" aria-label="edge-busan-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;min-height:44px;font-family:'IBM Plex Sans',sans-serif">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0">edge-sg-1</td><td>4.2 Mbps</td><td>0.3%</td><td style="text-align:right"><a href="https://edge-sg-1.example.net/" target="_blank" rel="noopener" aria-label="edge-sg-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;min-height:44px;font-family:'IBM Plex Sans',sans-serif">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:0">edge-la-1</td><td>4.2 Mbps</td><td>0.4%</td><td style="text-align:right"><a href="https://edge-la-1.example.net/" target="_blank" rel="noopener" aria-label="edge-la-1 대시보드 새 탭에서 열기" style="display:inline-flex;align-items:center;min-height:44px;font-family:'IBM Plex Sans',sans-serif">열기 ↗</a></td></tr>
+</tbody></table></div>
+<div class="lb" style="margin-top:10px;line-height:1.5">"수신 측 보고 loss"는 edge가 RTCP로 origin에 알려준 값입니다. edge의 세부 상태는 대시보드에서 확인하세요.</div>
+</section>
+</div>
+
+<section aria-label="이 서버 viewers" class="cd" style="display:flex;flex-wrap:wrap;gap:16px 40px;align-items:center;justify-content:space-between">
+<div style="display:flex;flex-wrap:wrap;gap:16px 40px"><div><div class="lb">이 서버 viewers (이 방송)</div><div class="mono" style="font-size:20px">612</div></div><div><div class="lb">Viewer loss p50</div><div class="mono" style="font-size:20px">0.8%</div></div><div><div class="lb">loss 5% 이상 viewer</div><div class="mono" style="font-size:20px">2.8%</div></div></div>
+<a href="#" style="display:inline-flex;align-items:center;min-height:44px;font-weight:500">Viewers에서 보기 →</a>
+</section>
+
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1500}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

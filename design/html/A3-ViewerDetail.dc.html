@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>A3 · Viewer 상세</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select,input{font-family:inherit}
+button,select{cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.lb{font-size:12px;color:#9AA6B5}
+.ln{display:flex;gap:2px;height:22px;flex:1;min-width:0}
+.ln div{display:flex;align-items:center;justify-content:center;font-size:11px;overflow:hidden;white-space:nowrap;color:#0E1116}
+.lr{display:flex;align-items:center;gap:12px}
+.lr>span{flex:0 0 84px;font-size:12px;color:#9AA6B5}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1700px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#9AA6B5">이 서버</div><div class="mono" style="font-size:13px;margin-top:2px">edge-tokyo-1</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv" href="A3-EdgeLocal.dc.html">Overview</a>
+<a class="nv" href="A3-Workers.dc.html">Workers</a>
+<a class="nv" href="A3-Broadcasts.dc.html">Broadcasts (routers)</a>
+<a class="nv" href="A3-Pipe.dc.html">Pipe 수신</a>
+<a class="nv on" href="A3-Viewers.dc.html">Viewers</a>
+<a class="nv" href="A3-Alerts.dc.html">Alerts</a>
+</div>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between">
+<div style="display:flex;flex-direction:column;gap:8px">
+<nav aria-label="경로" class="mono" style="font-size:12px;color:#9AA6B5"><a href="A3-Viewers.dc.html">Viewers</a> › v-8f3a</nav>
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 class="mono" style="margin:0;font-size:24px;font-weight:500">v-8f3a</h1><span style="color:#F5C451;font-weight:700;font-size:12px;border:1.5px solid #F5C451;border-radius:6px;padding:2px 8px">▲ 재생 품질 낮음</span><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:#9AA6B5"><span>방송 <span class="mono" style="color:#E6EAF0">ch-live-0412</span></span><span>Router <span class="mono" style="color:#E6EAF0">w2</span></span><span>접속 <span class="mono" style="color:#E6EAF0">00:12:40</span></span><span>LTE · Chrome 129 / Android 14</span></div>
+</div>
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 2s 갱신</span>
+<div role="group" aria-label="시간 범위" style="display:flex;border:1px solid #232B35;border-radius:8px;overflow:hidden"><button style="min-height:44px;padding:0 16px;border:0;background:#1B2430;color:#E6EAF0">5m</button><button style="min-height:44px;padding:0 16px;border:0;background:transparent;color:#9AA6B5">접속 전체</button></div></div>
+</header>
+
+<section aria-label="진단" class="cd" style="border-color:#3A4553;display:flex;flex-direction:column;gap:10px">
+<h2 style="margin:0;font-size:15px;font-weight:600">진단 요약</h2>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5">
+<div style="display:flex;gap:10px"><span style="color:#F5C451;flex:0 0 auto">▲</span><span><span style="font-weight:600">수신 경로 문제 (가능성 높음)</span> — loss 9.1%, RTT 310ms로 점점 나빠지고 있습니다. 레이어를 High → Low까지 낮췄는데도 개선되지 않았습니다.</span></div>
+<div style="display:flex;gap:10px"><span style="color:#9AA6B5;flex:0 0 auto">●</span><span><span style="font-weight:600">LTE 환경</span> — 브라우저가 추정한 downlink는 0.4 Mbps로, 현재 수신 180 kbps를 감당하기엔 불안정한 수준입니다.</span></div>
+<div style="display:flex;gap:10px"><span style="color:#9AA6B5;flex:0 0 auto">●</span><span><span style="font-weight:600">Pipe 수신 loss의 영향</span> — 같은 방송의 다른 viewer도 하락 중이라, 이 viewer의 문제 일부는 상류(pipe)에서 온 것으로 보입니다.</span></div>
+</div>
+</section>
+
+<section aria-label="재생 상태 지표" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+<div class="cd" style="padding:16px"><div class="lb">현재 재생 상태</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px;color:#F5C451">▲ 버퍼링</div><div class="lb" style="margin-top:4px">최근 5분 중 14% 재생 안 됨</div></div>
+<div class="cd" style="padding:16px"><div class="lb">디코딩 fps</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">11 <span style="font-size:13px;color:#9AA6B5">/ 30</span></div><div class="lb" style="margin-top:4px">dropped 프레임 18%</div></div>
+<div class="cd" style="padding:16px"><div class="lb">수신 해상도</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">320×180</div><div class="lb" style="margin-top:4px">화면 표시 720p로 확대</div></div>
+<div class="cd" style="padding:16px"><div class="lb">Freeze</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px;color:#FF8F8F">▲ 4회/분</div><div class="lb" style="margin-top:4px">누적 14s · 마지막 8s</div></div>
+<div class="cd" style="padding:16px"><div class="lb">Jitter buffer</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">420 ms</div><div class="lb" style="margin-top:4px">평소 80ms</div></div>
+<div class="cd" style="padding:16px"><div class="lb">수신 bitrate</div><div class="mono" style="font-size:24px;font-weight:500;margin-top:6px">180 <span style="font-size:13px;color:#9AA6B5">kbps</span></div><div class="lb" style="margin-top:4px">Low 레이어 · 평소 900 kbps</div></div>
+</section>
+
+<section aria-label="재생 타임라인" class="cd" style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">타임라인 (최근 5분)</h2>
+<div style="display:flex;gap:14px;font-size:12px;color:#9AA6B5;flex-wrap:wrap"><span>■ <span style="color:#5AA9FF">재생</span></span><span>■ <span style="color:#F5C451">버퍼링</span></span><span>■ <span style="color:#FF8F8F">Freeze</span></span></div></div>
+
+<div class="lr"><span>재생 상태</span><div class="ln" role="img" aria-label="재생 상태. 약 100초 재생 후 버퍼링 8초, 재생, freeze 6초, 재생, 버퍼링 11초, 재생, freeze 8초, 재생">
+<div style="flex:100;background:#5AA9FF;border-radius:3px 0 0 3px">재생</div><div style="flex:8;background:#F5C451"></div><div style="flex:62;background:#5AA9FF">재생</div><div style="flex:6;background:#FF8F8F"></div><div style="flex:54;background:#5AA9FF">재생</div><div style="flex:11;background:#F5C451"></div><div style="flex:21;background:#5AA9FF"></div><div style="flex:8;background:#FF8F8F"></div><div style="flex:30;background:#5AA9FF;border-radius:0 3px 3px 0">재생</div></div></div>
+
+<div class="lr"><span>수신 레이어</span><div class="ln" role="img" aria-label="수신 레이어. 60초 High, 60초 Mid, 이후 Low">
+<div style="flex:60;background:#5AA9FF;border-radius:3px 0 0 3px">High</div><div style="flex:60;background:#2F6FB3;color:#E6EAF0">Mid</div><div style="flex:180;background:#1F4A78;color:#E6EAF0;border-radius:0 3px 3px 0">Low</div></div></div>
+
+<div class="lr"><span>연결</span><div class="ln" role="img" aria-label="연결 상태. 215초 연결 후 6초 재연결, 이후 연결">
+<div style="flex:215;background:#2A3A33;color:#4ADE9A;border-radius:3px 0 0 3px">connected</div><div style="flex:6;background:#F5C451"></div><div style="flex:79;background:#2A3A33;color:#4ADE9A;border-radius:0 3px 3px 0">connected</div></div></div>
+
+<div class="lr"><span></span><div class="mono" style="flex:1;display:flex;justify-content:space-between;font-size:11px;color:#9AA6B5"><span>18:47:00</span><span>18:48:00</span><span>18:49:00</span><span>18:50:00</span><span>18:51:00</span><span>18:52:00</span></div></div>
+</section>
+
+<section aria-label="지표 추이" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+
+<div class="cd" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="margin:0;font-size:14px;font-weight:600">Loss (%)</h3><span class="mono" style="font-size:13px;color:#FF8F8F">▲ 9.1</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="Loss가 5분간 1.2%에서 9.1%로 상승" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="6" y="16">12</text><text x="12" y="56">6</text><text x="12" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,84 58,83 80,79 102,71 124,67 146,62 168,57 190,52 212,46 234,41 256,36 278,33 300,31"/><circle cx="300" cy="31" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg></div>
+
+<div class="cd" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="margin:0;font-size:14px;font-weight:600">RTT (ms)</h3><span class="mono" style="font-size:13px;color:#FF8F8F">▲ 310</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="RTT가 5분간 90ms에서 310ms로 상승" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="6" y="16">400</text><text x="6" y="56">200</text><text x="24" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,74 58,74 80,70 102,66 124,62 146,57 168,52 190,48 212,44 234,40 256,36 278,32 300,30"/><circle cx="300" cy="30" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg></div>
+
+<div class="cd" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="margin:0;font-size:14px;font-weight:600">디코딩 fps</h3><span class="mono" style="font-size:13px;color:#FF8F8F">▲ 11</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="디코딩 fps가 30에서 11로 하락" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="12" y="16">30</text><text x="12" y="56">15</text><text x="24" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,12 58,12 80,15 102,20 124,28 146,33 168,39 190,44 212,49 234,55 256,57 278,60 300,63"/><circle cx="300" cy="63" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg></div>
+
+<div class="cd" style="padding:16px"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="margin:0;font-size:14px;font-weight:600">Jitter buffer (ms)</h3><span class="mono" style="font-size:13px;color:#FF8F8F">▲ 420</span></div>
+<svg viewBox="0 0 310 120" width="100%" role="img" aria-label="Jitter buffer가 60ms에서 420ms로 증가" style="margin-top:8px;display:block"><g stroke="#232B35"><line x1="36" y1="12" x2="304" y2="12"/><line x1="36" y1="52" x2="304" y2="52"/><line x1="36" y1="92" x2="304" y2="92"/></g><g font-family="IBM Plex Mono" font-size="10" fill="#9AA6B5"><text x="6" y="16">600</text><text x="6" y="56">300</text><text x="24" y="96">0</text><text x="36" y="112">-5m</text><text x="276" y="112">now</text></g><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="36,84 58,83 80,79 102,73 124,67 146,60 168,53 190,48 212,44 234,40 256,39 278,37 300,36"/><circle cx="300" cy="36" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg></div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+
+<section aria-label="이벤트" class="cd" style="flex:2 1 400px;min-width:0;display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font-size:15px;font-weight:600">이 viewer의 이벤트</h2>
+<div style="display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.45">
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">18:51:22</span><span><span style="color:#FF8F8F">▲ Freeze</span> 8s</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">18:50:50</span><span><span style="color:#F5C451">▲ 버퍼링</span> 11s</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">18:50:35</span><span><span style="color:#F5C451">▲</span> 연결 재시작 (ICE restart) 6s</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">18:49:50</span><span><span style="color:#FF8F8F">▲ Freeze</span> 6s</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">18:49:00</span><span>레이어 Mid → Low (대역폭 추정 0.9 → 0.4 Mbps)</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">18:48:40</span><span><span style="color:#F5C451">▲ 버퍼링</span> 8s</span></div>
+<div style="display:flex;gap:12px"><span class="mono" style="color:#9AA6B5;flex:0 0 68px">18:48:00</span><span>레이어 High → Mid (대역폭 추정 1.8 → 0.9 Mbps)</span></div>
+</div>
+</section>
+
+<section aria-label="상세 값" class="cd" style="flex:3 1 480px;min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px">
+
+<div style="display:flex;flex-direction:column;gap:10px;font-size:13px"><div class="lb" style="border-bottom:1px solid #232B35;padding-bottom:6px">서버가 본 값 (consumer)</div>
+<div style="display:flex;justify-content:space-between"><span class="lb">Producer 전송 loss / 이 viewer loss</span><span class="mono">0.1% / 9.1%</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">선호 / 현재 레이어</span><span class="mono">High / Low</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">송신 bitrate</span><span class="mono">180 kbps</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">NACK 수신 / 분</span><span class="mono">220</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">PLI 수신 / 분</span><span class="mono">9</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">Transport</span><span class="mono">recv · connected</span></div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px;font-size:13px"><div class="lb" style="border-bottom:1px solid #232B35;padding-bottom:6px">브라우저가 보고한 값</div>
+<div style="display:flex;justify-content:space-between"><span class="lb">Decoded / dropped</span><span class="mono">2,410 / 530</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">Freeze 누적</span><span class="mono">14 s</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">Pause 횟수</span><span class="mono">0</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">오디오 보정 (concealed)</span><span class="mono">12%</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">NACK / PLI 송신</span><span class="mono">221 / 9</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">보고 주기</span><span class="mono">5s</span></div></div>
+
+<div style="display:flex;flex-direction:column;gap:10px;font-size:13px"><div class="lb" style="border-bottom:1px solid #232B35;padding-bottom:6px">접속 환경</div>
+<div style="display:flex;justify-content:space-between"><span class="lb">네트워크</span><span class="mono">LTE (4g)</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">downlink 추정</span><span class="mono">0.4 Mbps</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">브라우저 / OS</span><span class="mono">Chrome 129 / Android 14</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">화면</span><span class="mono">1080×2400</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">지역</span><span class="mono">JP · IP 마스킹</span></div>
+<div style="display:flex;justify-content:space-between"><span class="lb">Transport id</span><span class="mono">tr-5d2e…c1</span></div></div>
+</section>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1700}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

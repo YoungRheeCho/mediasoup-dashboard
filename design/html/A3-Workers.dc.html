@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>A3 · Workers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select{font-family:inherit;cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1300px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#9AA6B5">이 서버</div><div class="mono" style="font-size:13px;margin-top:2px">edge-tokyo-1</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv" href="A3-EdgeLocal.dc.html">Overview</a>
+<a class="nv on" href="A3-Workers.dc.html">Workers</a>
+<a class="nv" href="A3-Broadcasts.dc.html">Broadcasts (routers)</a>
+<a class="nv" href="A3-Pipe.dc.html">Pipe 수신</a>
+<a class="nv" href="A3-Viewers.dc.html">Viewers</a>
+<a class="nv" href="A3-Alerts.dc.html">Alerts</a>
+</div>
+<a href="O1-Overview.dc.html" style="margin-top:auto;display:flex;align-items:center;min-height:44px;font-size:13px">Origin 대시보드 ↗</a>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 style="margin:0;font-size:24px;font-weight:600">Workers</h1><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 10s 갱신</span>
+</header>
+<p style="margin:-8px 0 0;color:#9AA6B5;line-height:1.6;max-width:760px">Worker는 mediasoup이 띄운 프로세스 하나(CPU 코어 1개)입니다. 이 서버에서 부하가 어디로 쏠리는지, 새 router를 어느 worker에 둘지 판단하는 화면입니다.</p>
+
+<section aria-label="워커 카드" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+
+<div class="cd" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-weight:500">w0</span><span style="font-size:12px;color:#4ADE9A">● running</span></div>
+<div class="mono" style="font-size:30px;font-weight:500">72<span style="font-size:14px;color:#9AA6B5"> % CPU</span></div>
+<svg viewBox="0 0 240 48" width="100%" height="48" role="img" aria-label="w0 CPU 최근 5분, 완만히 상승"><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="0,30 20,28 40,29 60,25 80,26 100,22 120,23 140,18 160,19 180,15 200,13 220,12 240,13"/><circle cx="240" cy="13" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px;color:#9AA6B5"><span>router 1</span><span>consumers 420</span><span>transports 203</span><span>producers 4</span><span>메모리 410 MB</span><span>uptime 18d</span></div>
+</div>
+
+<div class="cd" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-weight:500">w1</span><span style="font-size:12px;color:#4ADE9A">● running</span></div>
+<div class="mono" style="font-size:30px;font-weight:500">70<span style="font-size:14px;color:#9AA6B5"> % CPU</span></div>
+<svg viewBox="0 0 240 48" width="100%" height="48" role="img" aria-label="w1 CPU 최근 5분, 70% 부근에서 유지"><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="0,16 20,15 40,14 60,16 80,15 100,14 120,15 140,14 160,16 180,15 200,14 220,15 240,14"/><circle cx="240" cy="14" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px;color:#9AA6B5"><span>router 2</span><span>consumers 556</span><span>transports 269</span><span>producers 8</span><span>메모리 380 MB</span><span>uptime 18d</span></div>
+</div>
+
+<div class="cd" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-weight:500">w2</span><span style="font-size:12px;color:#4ADE9A">● running</span></div>
+<div class="mono" style="font-size:30px;font-weight:500">68<span style="font-size:14px;color:#9AA6B5"> % CPU</span></div>
+<svg viewBox="0 0 240 48" width="100%" height="48" role="img" aria-label="w2 CPU 최근 5분, 완만히 상승"><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="0,20 20,19 40,17 60,18 80,17 100,16 120,17 140,16 160,17 180,16 200,15 220,16 240,15"/><circle cx="240" cy="15" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px;color:#9AA6B5"><span>router 1</span><span>consumers 416</span><span>transports 201</span><span>producers 4</span><span>메모리 395 MB</span><span>uptime 18d</span></div>
+</div>
+
+<div class="cd" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span class="mono" style="font-weight:500">w3</span><span style="font-size:12px;color:#F5C451">▲ 재시작 1회 (3일 전)</span></div>
+<div class="mono" style="font-size:30px;font-weight:500">12<span style="font-size:14px;color:#9AA6B5"> % CPU</span></div>
+<svg viewBox="0 0 240 48" width="100%" height="48" role="img" aria-label="w3 CPU 최근 5분, 12% 부근에서 유지"><polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="0,42 20,43 40,42 60,41 80,43 100,42 120,42 140,41 160,42 180,43 200,42 220,41 240,42"/><circle cx="240" cy="42" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/></svg>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px;color:#9AA6B5"><span>router 1</span><span>consumers 68</span><span>transports 35</span><span>producers 2</span><span>메모리 120 MB</span><span>uptime 3d</span></div>
+</div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+
+<section aria-label="Router 배치" class="cd" style="flex:2 1 520px;min-width:0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">Router 배치</h2><span style="font-size:12px;color:#9AA6B5">블록 높이 = consumers 수</span></div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end;height:230px">
+<div style="display:flex;flex-direction:column;gap:2px;justify-content:flex-end;height:100%"><div style="height:105px;background:#2F6FB3;border-radius:6px;padding:8px;box-sizing:border-box;font-size:12px"><div class="mono">ch-live-0412 ①</div><div style="color:#D6E6F7">420</div></div></div>
+<div style="display:flex;flex-direction:column;gap:2px;justify-content:flex-end;height:100%"><div style="height:50px;background:#1F4A78;border-radius:6px;padding:8px;box-sizing:border-box;font-size:12px"><div class="mono">ch-sports-03</div></div><div style="height:89px;background:#2F6FB3;border-radius:6px;padding:8px;box-sizing:border-box;font-size:12px"><div class="mono">ch-news-12</div><div style="color:#D6E6F7">356</div></div></div>
+<div style="display:flex;flex-direction:column;gap:2px;justify-content:flex-end;height:100%"><div style="height:104px;background:#2F6FB3;border-radius:6px;padding:8px;box-sizing:border-box;font-size:12px"><div class="mono">ch-live-0412 ②</div><div style="color:#D6E6F7">416</div></div></div>
+<div style="display:flex;flex-direction:column;gap:2px;justify-content:flex-end;height:100%"><div style="height:34px;background:#1F4A78;border-radius:6px;padding:8px;box-sizing:border-box;font-size:12px"><div class="mono">ch-music-08</div></div></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;border-top:1px solid #232B35;padding-top:8px" class="mono"><span style="font-size:12px">w0 · 72%</span><span style="font-size:12px">w1 · 70%</span><span style="font-size:12px">w2 · 68%</span><span style="font-size:12px">w3 · 12%</span></div>
+<div style="font-size:12px;color:#9AA6B5;line-height:1.5">ch-live-0412는 한 router로 감당할 수 없어서 w0과 w2에 나눠 담겨 있습니다(① ②). 두 router는 같은 pipe에서 piped producer를 공유합니다.</div>
+</section>
+
+<section aria-label="배치 권장" class="cd" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:14px">
+<h2 style="margin:0;font-size:15px;font-weight:600">배치 권장</h2>
+<div style="display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.5">
+<div style="display:flex;gap:10px"><span style="color:#F5C451;flex:0 0 auto">▲</span><span>w0 · w1 · w2가 모두 CPU 68% 이상입니다. 여유는 약 10~12%p뿐이에요.</span></div>
+<div style="display:flex;gap:10px"><span style="color:#4ADE9A;flex:0 0 auto">●</span><span>새 router나 viewer 증가분은 <span class="mono">w3</span>에 먼저 배치하는 게 좋습니다 (여유 약 68%p).</span></div>
+<div style="display:flex;gap:10px"><span style="color:#9AA6B5;flex:0 0 auto">●</span><span>w3은 3일 전 재시작 이력이 있어 안정성 확인 후 늘리는 것을 권장합니다.</span></div>
+</div>
+</section>
+</div>
+
+<section aria-label="워커 리소스 상세" class="cd">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px"><h2 style="margin:0;font-size:15px;font-weight:600">리소스 상세</h2><span style="font-size:12px;color:#9AA6B5">worker.getResourceUsage()</span></div>
+<div style="overflow-x:auto">
+<table style="width:100%;min-width:600px;border-collapse:collapse;font-size:13px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:8px 0;font-weight:500">Worker</th><th style="font-weight:500">CPU user</th><th style="font-weight:500">CPU sys</th><th style="font-weight:500">maxrss</th><th style="font-weight:500">자발적 컨텍스트 스위치 / s</th><th style="font-weight:500">재시작</th></tr></thead>
+<tbody class="mono">
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">w0</td><td>48%</td><td>24%</td><td>410 MB</td><td>3,120</td><td>0</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">w1</td><td>46%</td><td>24%</td><td>380 MB</td><td>2,860</td><td>0</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">w2</td><td>45%</td><td>23%</td><td>395 MB</td><td>2,940</td><td>0</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">w3</td><td>8%</td><td>4%</td><td>120 MB</td><td>410</td><td style="color:#F5C451">▲ 1</td></tr>
+</tbody></table></div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1300}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

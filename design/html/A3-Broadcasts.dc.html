@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>A3 · Broadcasts</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select{font-family:inherit;cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.bl{display:flex;flex-direction:column;gap:4px;min-height:44px;justify-content:center;padding:8px 12px;border-radius:8px;border:1px solid transparent;color:#E6EAF0;text-decoration:none}
+.bl.on{background:#1B2430;border-color:#2E3A49}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1400px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #232B35;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#9AA6B5">이 서버</div><div class="mono" style="font-size:13px;margin-top:2px">edge-tokyo-1</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv" href="A3-EdgeLocal.dc.html">Overview</a>
+<a class="nv" href="A3-Workers.dc.html">Workers</a>
+<a class="nv on" href="A3-Broadcasts.dc.html">Broadcasts (routers)</a>
+<a class="nv" href="A3-Pipe.dc.html">Pipe 수신</a>
+<a class="nv" href="A3-Viewers.dc.html">Viewers</a>
+<a class="nv" href="A3-Alerts.dc.html">Alerts</a>
+</div>
+<a href="O1-Overview.dc.html" style="margin-top:auto;display:flex;align-items:center;min-height:44px;font-size:13px">Origin 대시보드 ↗</a>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 style="margin:0;font-size:24px;font-weight:600">Broadcasts</h1><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 10s 갱신</span>
+</header>
+<p style="margin:-8px 0 0;color:#9AA6B5;line-height:1.6;max-width:760px">이 서버가 중계하는 방송 목록과, 선택한 방송의 흐름(pipe 수신 → router → viewer)을 보여줍니다. 문제가 pipe 쪽인지, 이 서버 안쪽인지, viewer 쪽인지 구분하는 화면입니다.</p>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+
+<section aria-label="방송 목록" class="cd" style="flex:0 1 280px;min-width:240px;padding:12px;display:flex;flex-direction:column;gap:4px">
+<div style="font-size:12px;color:#9AA6B5;padding:6px 12px">방송 4</div>
+<a class="bl on" href="#"><span class="mono" style="font-size:13px">ch-live-0412</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>402명</span><span style="color:#F5C451">▲ loss 2.4%</span></span></a>
+<a class="bl" href="#"><span class="mono" style="font-size:13px">ch-news-12</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>171명</span><span>loss 0.3%</span></span></a>
+<a class="bl" href="#"><span class="mono" style="font-size:13px">ch-sports-03</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>96명</span><span>loss 0.2%</span></span></a>
+<a class="bl" href="#"><span class="mono" style="font-size:13px">ch-music-08</span><span style="display:flex;justify-content:space-between;font-size:12px;color:#9AA6B5"><span>34명</span><span>loss 0.1%</span></span></a>
+</section>
+
+<div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:16px">
+
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between">
+<h2 class="mono" style="margin:0;font-size:20px;font-weight:500">ch-live-0412</h2>
+<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:#9AA6B5"><span>router <span class="mono" style="color:#E6EAF0">w0 · w2</span></span><span>방송 경과 <span class="mono" style="color:#E6EAF0">00:47:12</span></span><span>viewer loss p50 <span class="mono" style="color:#E6EAF0">2.1%</span></span></div>
+</div>
+
+<section aria-label="방송 흐름" class="cd">
+<h3 style="margin:0 0 14px;font-size:15px;font-weight:600">흐름</h3>
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:stretch">
+
+<div style="flex:1 1 180px;min-width:0;background:#0E1116;border:1px solid #F5C451;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px">
+<div style="font-size:12px;color:#9AA6B5">① Pipe 수신 (origin → 여기)</div>
+<div class="mono" style="font-size:13px">4.1 Mbps</div>
+<div class="mono" style="font-size:13px;color:#F5C451">▲ loss 2.4% · RTT 88ms</div>
+<div style="font-size:12px;color:#9AA6B5">piped producer 4</div>
+</div>
+<div style="align-self:center;color:#9AA6B5" aria-hidden="true">→</div>
+
+<div style="flex:1 1 220px;min-width:0;display:flex;flex-direction:column;gap:8px">
+<div style="background:#0E1116;border:1px solid #232B35;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+<div style="font-size:12px;color:#9AA6B5">② Router · <span class="mono">w0</span></div>
+<div class="mono" style="font-size:13px">CPU 72% · 입력 4.1 Mbps</div>
+</div>
+<div style="background:#0E1116;border:1px solid #232B35;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+<div style="font-size:12px;color:#9AA6B5">② Router · <span class="mono">w2</span></div>
+<div class="mono" style="font-size:13px">CPU 68% · 입력 4.1 Mbps</div>
+</div>
+</div>
+<div style="align-self:center;color:#9AA6B5" aria-hidden="true">→</div>
+
+<div style="flex:1 1 180px;min-width:0;background:#0E1116;border:1px solid #232B35;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px">
+<div style="font-size:12px;color:#9AA6B5">③ Viewers</div>
+<div class="mono" style="font-size:13px">402명 (w0 202 · w2 200)</div>
+<div class="mono" style="font-size:13px">consumers 836</div>
+<div style="font-size:12px;color:#F5C451">▲ loss 5% 이상 52명</div>
+</div>
+</div>
+<div style="font-size:12px;color:#9AA6B5;margin-top:12px;line-height:1.5">① 구간(노란 테두리)에서 이미 손실이 발생하고 있어 ③ 품질 저하의 원인일 가능성이 높습니다. 이 서버 안쪽(②) CPU는 아직 여유가 있습니다.</div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+
+<section aria-label="Piped producers" class="cd" style="flex:3 1 400px;min-width:0">
+<h3 style="margin:0 0 12px;font-size:15px;font-weight:600">Piped producers</h3>
+<div style="overflow-x:auto"><table style="width:100%;min-width:440px;border-collapse:collapse;font-size:12.5px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:6px 0;font-weight:500">Stream</th><th style="font-weight:500">입력</th><th style="font-weight:500">Consumers</th><th style="font-weight:500">PLI / 분</th></tr></thead>
+<tbody class="mono">
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">audio · opus</td><td>38 kbps</td><td>836</td><td>—</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">video · High 720p</td><td>2.6 Mbps</td><td>401</td><td style="color:#F5C451">▲ 14</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">video · Mid 360p</td><td>1.1 Mbps</td><td>267</td><td>6</td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:10px 0">video · Low 180p</td><td>0.5 Mbps</td><td>168</td><td>3</td></tr>
+</tbody></table></div>
+<div style="font-size:12px;color:#9AA6B5;margin-top:10px;line-height:1.5">PLI(키프레임 요청)가 평소보다 많습니다. pipe 손실로 영상이 깨져서 요청이 늘어난 것으로 보입니다.</div>
+</section>
+
+<section aria-label="Viewer 수 추이" class="cd" style="flex:2 1 320px;min-width:0">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px"><h3 style="margin:0;font-size:15px;font-weight:600">Viewer 수</h3><span style="font-size:12px;color:#9AA6B5">최근 1시간</span></div>
+<svg viewBox="0 0 400 210" width="100%" role="img" aria-label="최근 1시간 viewer 수가 250명에서 402명으로 증가" style="margin-top:10px;display:block">
+<g stroke="#232B35"><line x1="40" y1="20" x2="390" y2="20"/><line x1="40" y1="95" x2="390" y2="95"/><line x1="40" y1="170" x2="390" y2="170"/></g>
+<g font-family="IBM Plex Mono" font-size="11" fill="#9AA6B5"><text x="8" y="24">450</text><text x="8" y="99">225</text><text x="22" y="174">0</text><text x="40" y="196">-1h</text><text x="350" y="196">now</text></g>
+<polyline fill="none" stroke="#5AA9FF" stroke-width="2" stroke-linejoin="round" points="40,87 54,86 68,85 82,83 96,83 110,81 124,80 138,78 152,76 166,74 180,73 194,70 208,67 222,64 236,61 250,58 264,56 278,53 292,51 306,48 320,45 334,43 348,41 362,38 376,36"/>
+<circle cx="376" cy="36" r="4" fill="#5AA9FF" stroke="#151A21" stroke-width="2"/>
+</svg>
+</section>
+</div>
+
+<section aria-label="수신 화질 레이어" class="cd">
+<h3 style="margin:0 0 12px;font-size:15px;font-weight:600">Consumer 수신 레이어</h3>
+<div style="display:flex;gap:2px;height:14px"><div style="flex:48;background:#5AA9FF;border-radius:3px 0 0 3px"></div><div style="flex:32;background:#2F6FB3"></div><div style="flex:20;background:#1F4A78;border-radius:0 3px 3px 0"></div></div>
+<div style="display:flex;gap:18px;font-size:12px;margin-top:8px;flex-wrap:wrap"><span>High 48%</span><span>Mid 32%</span><span>Low 20%</span><span style="color:#9AA6B5">레이어 전환 / 분: <span class="mono" style="color:#F5C451">▲ 38</span> (평소 12)</span></div>
+</section>
+
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1400}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

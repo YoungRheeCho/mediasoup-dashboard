@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Origin · Connected Edges</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0;background:#0E1116}
+button,select,input{font-family:inherit}
+button,select{cursor:pointer}
+a{color:#7DBBFF}a:hover{color:#B3D6FF}
+.nv{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:8px;color:#9AA6B5;text-decoration:none}
+.nv.on{background:#1B2430;color:#E6EAF0;font-weight:500}
+.cd{background:#151A21;border:1px solid #232B35;border-radius:10px;padding:20px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.lb{font-size:12px;color:#9AA6B5}
+.chip{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid #232B35;background:transparent;color:#9AA6B5;font-size:13px}
+.chip.on{background:#1B2430;color:#E6EAF0;border-color:#2E3A49}
+.op{display:inline-flex;align-items:center;min-height:44px;font-family:'IBM Plex Sans',sans-serif;font-weight:500}
+.mx td,.mx th{text-align:center;padding:10px 6px;font-weight:400}
+.mx th.r{text-align:left}
+</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1300px;background:#0E1116;color:#E6EAF0;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px">
+
+<nav aria-label="주 메뉴" style="flex:0 0 220px;box-sizing:border-box;padding:24px 16px;border-right:1px solid #232B35;display:flex;flex-direction:column;gap:28px;min-width:200px;flex-grow:1;max-width:100%">
+<div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#5AA9FF" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="3"/><path d="M11 2v4M11 16v4M2 11h4M16 11h4"/></svg>SFU Monitor</div>
+<div style="background:#151A21;border:1px solid #2E5E94;border-radius:8px;padding:10px 12px"><div style="font-size:11px;color:#7DBBFF;font-weight:600;letter-spacing:0.04em">ORIGIN</div><div class="mono" style="font-size:13px;margin-top:2px">origin-seoul-01</div></div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<a class="nv" href="O1-Overview.dc.html">Overview</a>
+<a class="nv" href="O2-Rooms.dc.html">Rooms &amp; Broadcasters</a>
+<a class="nv on" href="O4-Edges.dc.html">Connected Edges</a>
+<a class="nv" href="#">Workers</a>
+<a class="nv" href="#">Viewers</a>
+<a class="nv" href="#">Alerts</a>
+</div>
+</nav>
+
+<main style="flex:999 1 640px;min-width:0;padding:24px 32px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><h1 style="margin:0;font-size:24px;font-weight:600">Connected Edges</h1><span class="mono" style="font-size:12px;color:#9AA6B5;border:1px solid #232B35;border-radius:6px;padding:4px 8px">샘플 데이터</span></div>
+<span style="display:flex;align-items:center;gap:8px;color:#4ADE9A;font-size:13px"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="5" fill="#4ADE9A"/></svg>Live · 10s 갱신</span>
+</header>
+<p style="margin:-8px 0 0;color:#9AA6B5;line-height:1.6;max-width:780px">이 origin에 pipe로 연결된 edge 목록입니다. 여기서는 origin이 직접 아는 정보(pipe 상태, 송신량, 수신 측이 보고한 loss)만 보여주고, edge 내부 상태는 "대시보드 열기"로 새 탭에서 확인합니다.</p>
+
+<section aria-label="요약" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px">
+<div class="cd" style="padding:16px"><div class="lb">등록된 edge</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px">7</div></div>
+<div class="cd" style="padding:16px"><div class="lb">연결됨</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px;color:#4ADE9A">6</div></div>
+<div class="cd" style="padding:16px;border-color:#3A4553"><div class="lb">Pipe 끊김</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px;color:#F5C451">▲ 1</div></div>
+<div class="cd" style="padding:16px;border-color:#3A4553"><div class="lb">수신 측 loss 주의</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px;color:#F5C451">▲ 1</div></div>
+<div class="cd" style="padding:16px"><div class="lb">총 pipe 송신</div><div class="mono" style="font-size:30px;font-weight:500;margin-top:6px">68<span style="font-size:14px;color:#9AA6B5"> Mbps</span></div></div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+<label style="flex:1 1 240px;max-width:360px;display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9AA6B5">검색
+<input type="text" placeholder="edge 이름 또는 지역" style="min-height:44px;box-sizing:border-box;border:1px solid #232B35;border-radius:8px;padding:0 12px;font-size:14px;background:#151A21;color:#E6EAF0">
+</label>
+<div role="group" aria-label="필터" style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="chip on">전체 7</button>
+<button class="chip">문제 있음 2</button>
+<button class="chip">연결됨 6</button>
+<button class="chip">끊김 1</button>
+</div>
+</div>
+
+<section aria-label="Edge 목록" class="cd" style="padding:12px 20px 20px">
+<div style="overflow-x:auto"><table style="width:100%;min-width:820px;border-collapse:collapse;font-size:13px">
+<thead><tr style="text-align:left;color:#9AA6B5;font-size:12px"><th style="padding:10px 0;font-weight:500">Edge</th><th style="font-weight:500">지역</th><th style="font-weight:500">Pipe</th><th style="font-weight:500">방송</th><th style="font-weight:500">송신</th><th style="font-weight:500">수신 측 보고 loss</th><th style="font-weight:500">연결 시간</th><th style="font-weight:500;text-align:right">대시보드</th></tr></thead>
+<tbody class="mono">
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">edge-sydney-1</td><td>AU</td><td style="color:#F5C451;font-family:'IBM Plex Sans',sans-serif">▲ 끊김</td><td>0</td><td>—</td><td>—</td><td>19:14부터 (4분)</td><td style="text-align:right"><a class="op" href="https://edge-sydney-1.example.net/" target="_blank" rel="noopener" aria-label="edge-sydney-1 대시보드 새 탭에서 열기">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">edge-tokyo-1</td><td>JP</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">● 연결</td><td>4</td><td>15.2 Mbps</td><td style="color:#F5C451">▲ 2.4%</td><td>18d 04h</td><td style="text-align:right"><a class="op" href="https://edge-tokyo-1.example.net/" target="_blank" rel="noopener" aria-label="edge-tokyo-1 대시보드 새 탭에서 열기">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">edge-seoul-1</td><td>KR</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">● 연결</td><td>5</td><td>16.8 Mbps</td><td>0.1%</td><td>18d 04h</td><td style="text-align:right"><a class="op" href="https://edge-seoul-1.example.net/" target="_blank" rel="noopener" aria-label="edge-seoul-1 대시보드 새 탭에서 열기">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">edge-seoul-2</td><td>KR</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">● 연결</td><td>3</td><td>12.2 Mbps</td><td>0.0%</td><td>18d 04h</td><td style="text-align:right"><a class="op" href="https://edge-seoul-2.example.net/" target="_blank" rel="noopener" aria-label="edge-seoul-2 대시보드 새 탭에서 열기">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">edge-busan-1</td><td>KR</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">● 연결</td><td>3</td><td>10.0 Mbps</td><td>0.2%</td><td>7d 11h</td><td style="text-align:right"><a class="op" href="https://edge-busan-1.example.net/" target="_blank" rel="noopener" aria-label="edge-busan-1 대시보드 새 탭에서 열기">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">edge-sg-1</td><td>SG</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">● 연결</td><td>2</td><td>9.4 Mbps</td><td>0.3%</td><td>18d 04h</td><td style="text-align:right"><a class="op" href="https://edge-sg-1.example.net/" target="_blank" rel="noopener" aria-label="edge-sg-1 대시보드 새 탭에서 열기">열기 ↗</a></td></tr>
+<tr style="border-top:1px solid #232B35"><td style="padding:12px 0">edge-la-1</td><td>US</td><td style="color:#4ADE9A;font-family:'IBM Plex Sans',sans-serif">● 연결</td><td>1</td><td>4.2 Mbps</td><td>0.4%</td><td>18d 04h</td><td style="text-align:right"><a class="op" href="https://edge-la-1.example.net/" target="_blank" rel="noopener" aria-label="edge-la-1 대시보드 새 탭에서 열기">열기 ↗</a></td></tr>
+</tbody></table></div>
+<div class="lb" style="margin-top:10px;line-height:1.5">문제 있는 edge가 위로 올라옵니다. pipe가 끊긴 edge도 서버 자체는 응답할 수 있으니, 대시보드를 열어 직접 확인하세요.</div>
+</section>
+
+<section aria-label="방송별 전달 현황" class="cd">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:8px"><h2 style="margin:0;font-size:15px;font-weight:600">방송 × Edge 전달 현황</h2>
+<div style="display:flex;gap:14px;font-size:12px;color:#9AA6B5;flex-wrap:wrap"><span><span style="color:#4ADE9A">●</span> 전달 중</span><span><span style="color:#F5C451">✕</span> 끊김</span><span>· 없음</span></div></div>
+<div style="overflow-x:auto"><table class="mx" style="width:100%;min-width:720px;border-collapse:collapse;font-size:13px">
+<thead><tr class="lb"><th class="r">방송</th><th scope="col">seoul-1</th><th scope="col">seoul-2</th><th scope="col">busan-1</th><th scope="col">tokyo-1</th><th scope="col">sg-1</th><th scope="col">la-1</th><th scope="col">sydney-1</th></tr></thead>
+<tbody>
+<tr style="border-top:1px solid #232B35"><th scope="row" class="r mono">ch-live-0412</th><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#F5C451">✕</td></tr>
+<tr style="border-top:1px solid #232B35"><th scope="row" class="r mono">ch-news-12</th><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td></tr>
+<tr style="border-top:1px solid #232B35"><th scope="row" class="r mono">ch-sports-03</th><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#9AA6B5">·</td><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#9AA6B5">·</td><td style="color:#F5C451">✕</td></tr>
+<tr style="border-top:1px solid #232B35"><th scope="row" class="r mono">ch-music-08</th><td style="color:#4ADE9A">●</td><td style="color:#9AA6B5">·</td><td style="color:#4ADE9A">●</td><td style="color:#4ADE9A">●</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td></tr>
+<tr style="border-top:1px solid #232B35"><th scope="row" class="r mono">ch-talk-05</th><td style="color:#4ADE9A">●</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td><td style="color:#9AA6B5">·</td></tr>
+</tbody></table></div>
+<div class="lb" style="margin-top:10px;line-height:1.5">각 칸은 해당 방송이 그 edge로 pipe되고 있는지를 나타냅니다. sydney-1은 pipe가 끊기기 전에 ch-live-0412와 ch-sports-03을 받고 있었습니다.</div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1300}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
