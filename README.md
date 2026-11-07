@@ -18,27 +18,18 @@ tools/      시험 도구
 
 빠른 확인: `curl http://<노드IP>:18080/api/health` → `source: "hook"`, `collector.ok: true`. 화면은 `http://<노드IP>:18080`.
 
-## 이미지 빌드와 Kubernetes 배포
-
-아래 예시는 `qos` 네임스페이스에서 기존 mediasoup 서버 Pod에 대시보드와 TimescaleDB를 함께 실행하는 방식입니다. **기존 mediasoup 소스와 기존 YAML은 수정하지 말고**, 운영 중인 매니페스트를 복사한 새 YAML 또는 별도 overlay에 필요한 설정을 반영하세요. 기존 컨테이너 설정·볼륨·네트워크 설정은 운영 환경에 맞게 유지해야 합니다.
-
-> `design/central-overview-*.html`은 중앙 대시보드의 독립적인 디자인 시안입니다. 아래 Docker 이미지는 현재 구현된 서버별 Origin/Edge 대시보드를 실행하며, 시안의 중앙 화면이나 캔들 차트를 자동으로 포함하지 않습니다.
 
 ### 1. 이미지 빌드 및 업로드
 
-프로젝트 루트에서 실행합니다. `1.4.0`은 예시이므로 아직 사용하지 않은 버전으로 바꾸세요.
+프로젝트 루트에서 실행
 
 ```bash
 git clone https://github.com/YoungRheeCho/mediasoup-dashboard.git
 cd mediasoup-dashboard
 
-sudo docker build -t ghcr.io/youngrheecho/mediasoup-dashboard:1.4.0 .
-sudo docker push ghcr.io/youngrheecho/mediasoup-dashboard:1.4.0
+sudo docker build -t <image tag> .
 ```
 
-이미지에는 수집기·API·현재 React 화면과 DB 스키마가 포함됩니다. Hook은 이미지에 포함되지 않아 ConfigMap으로 별도 배포합니다. DB 연결 주소와 서버 주소는 빌드할 때 코드에 넣지 않고 아래 환경변수로 지정합니다. 클러스터 노드의 CPU 아키텍처와 빌드된 이미지 아키텍처도 일치해야 합니다.
-
-GHCR의 private 이미지는 Kubernetes에서 접근할 수 있는 `imagePullSecrets`가 필요합니다. 빌드하는 컴퓨터에서 `docker login`한 인증 정보와 Kubernetes의 pull Secret은 별개입니다.
 
 ### 2. Hook ConfigMap 준비
 
