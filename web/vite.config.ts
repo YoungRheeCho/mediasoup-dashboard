@@ -7,5 +7,12 @@ export default defineConfig({
 	server: {
 		proxy: { '/api': process.env.MSDASH_API ?? 'http://127.0.0.1:8080' },
 	},
-	build: { outDir: 'dist', sourcemap: true, chunkSizeWarningLimit: 800 },
+	build: {
+		outDir: 'dist',
+		sourcemap: true,
+		chunkSizeWarningLimit: 800,
+		// central.html(통합 3D 화면, origin의 첫 화면)은 top-level await을 쓴다
+		target: 'es2022',
+		rollupOptions: { input: { main: 'index.html', central: 'central.html' } },
+	},
 });

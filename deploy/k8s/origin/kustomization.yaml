@@ -6,6 +6,7 @@ namespace: qos
 
 resources:
   - ../../../../qos/network/mediasoup-origin.yaml
+  - rbac.yaml # 통합 3D 화면의 노드·Pod 자동 조회 (읽기 전용)
 
 configMapGenerator:
   - name: msdash-hook

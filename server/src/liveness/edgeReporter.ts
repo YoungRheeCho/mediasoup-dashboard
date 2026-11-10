@@ -2,7 +2,7 @@ import type { Config } from '../config.js';
 import type { CollectorStatus } from '../collector/collector.js';
 import type { EdgeBatch } from '../db/rows.js';
 import { createLogger } from '../log.js';
-import type { LivenessMessage } from './message.js';
+import type { EdgeLive, EdgeLiveViewer, LivenessMessage } from './message.js';
 
 const logger = createLogger('liveness');
 
@@ -16,6 +16,10 @@ export class EdgeLivenessSource {
 	#hasPipe = false;
 	#viewerCount: number | null = null;
 	#lastRttMs: number | null = null;
+	/** 통합 화면용: viewer 세션 정보와 최근 값 (세션 종료 시 지운다) */
+	readonly #sessions = new Map<string, { roomId: string; name: string | null; nameMock: boolean; connectedAt: number | null }>();
+	readonly #recent = new Map<string, { window: Array<[number, number]>; freezeCount: number | null; row: EdgeBatch['viewerSamples'][number] }>();
+	#live: EdgeLive | null = null;
 
 	constructor(
 		private readonly config: Config,
@@ -25,6 +29,13 @@ export class EdgeLivenessSource {
 	addBatch(batch: EdgeBatch): void {
 		this.#viewerCount = batch.viewerSamples.length;
 
+		// 화면용 값 계산이 실패해도 생존 신호(요약 숫자)는 계속 보낸다.
+		try {
+			this.#updateLive(batch);
+		} catch (error) {
+			logger.warn('building live payload failed: %s', (error as Error).message);
+		}
+
 		for (const p of batch.pipeSamples) {
 			if (p.packetsExpected !== null && p.packetsLost !== null) {
 				this.#lost += p.packetsLost;
@@ -32,6 +43,99 @@ export class EdgeLivenessSource {
 				this.#hasPipe = true;
 			}
 		}
+	}
+
+	/** 최근 묶음 기준 통합 화면용 값. 수집 전이면 null. */
+	get live(): EdgeLive | null {
+		return this.#live;
+	}
+
+	#updateLive(batch: EdgeBatch): void {
+		const LOSS_WINDOW = 5; // 최근 5번(=5초) delta로 loss 비율을 낸다. 1초 delta만 쓰면 패킷이 적어 값이 튄다.
+
+		for (const s of batch.viewerSessionStarts ?? []) {
+			this.#sessions.set(s.viewerId, {
+				roomId: s.roomId,
+				name: s.displayName,
+				nameMock: s.identitySource === 'mock',
+				connectedAt: s.connectedAt.getTime(),
+			});
+		}
+
+		for (const e of batch.viewerSessionEnds ?? []) {
+			this.#sessions.delete(e.viewerId);
+			this.#recent.delete(e.viewerId);
+		}
+
+		const seen = new Set<string>();
+
+		for (const row of batch.viewerSamples) {
+			seen.add(row.viewerId);
+
+			const r = this.#recent.get(row.viewerId) ?? { window: [], freezeCount: null, row };
+
+			r.row = row;
+
+			if (row.packetsExpected !== null && row.packetsLost !== null) {
+				r.window.push([row.packetsExpected, row.packetsLost]);
+
+				if (r.window.length > LOSS_WINDOW) {
+					r.window.shift();
+				}
+			}
+
+			if (row.clientFreezeCount !== null) {
+				r.freezeCount = (r.freezeCount ?? 0) + row.clientFreezeCount;
+			}
+
+			this.#recent.set(row.viewerId, r);
+		}
+
+		// 이번 묶음에 없는 viewer는 화면에서 뺀다 (세션 종료가 늦게 오는 경우 대비)
+		for (const id of this.#recent.keys()) {
+			if (!seen.has(id)) {
+				this.#recent.delete(id);
+			}
+		}
+
+		const viewers: EdgeLiveViewer[] = [];
+
+		for (const [id, r] of this.#recent) {
+			const s = this.#sessions.get(id);
+			const expected = r.window.reduce((a, [e]) => a + e, 0);
+			const lost = r.window.reduce((a, [, l]) => a + l, 0);
+
+			viewers.push({
+				id,
+				roomId: s?.roomId ?? r.row.roomId,
+				name: s?.name ?? null,
+				nameMock: s?.nameMock ?? false,
+				connectedAt: s?.connectedAt ?? null,
+				lossRatio: expected > 0 ? Math.min(1, Math.max(0, lost / expected)) : null,
+				rttMs: r.row.rttMs,
+				bitrateBps: r.row.bitrateBps,
+				spatialLayer: r.row.spatialLayer,
+				transportState: r.row.transportState,
+				clientReported: r.row.clientReported,
+				freezeCount: r.freezeCount,
+				fps: r.row.clientFps,
+			});
+		}
+
+		const workers = batch.workers ?? [];
+		const cpus = workers.map(w => w.cpuPct).filter((v): v is number => v !== null);
+		const status = this.status();
+
+		this.#live = {
+			nodeName: this.config.nodeName,
+			hostCpuPct: batch.collector?.hostCpuPct ?? null,
+			cpuPct: cpus.length ? cpus.reduce((a, b) => a + b, 0) : null,
+			workerCount: workers.length,
+			collectMs: batch.collector?.collectDurationMs ?? null,
+			skippedCycles: status.skippedCycles,
+			eventLoopLagMs: batch.collector?.eventLoopLagMs ?? null,
+			viewers,
+		};
 	}
 
 	setLastRtt(rttMs: number | null): void {
@@ -56,6 +160,7 @@ export class EdgeLivenessSource {
 			recvPacketsExpected: this.#hasPipe ? this.#expected : null,
 			lastRttMs: this.#lastRttMs,
 			sentAt: now,
+			live: this.#live,
 		};
 
 		this.#lost = 0;
@@ -79,6 +184,7 @@ export class EdgeLivenessSource {
 export class PushLivenessReporter {
 	#timer: NodeJS.Timeout | null = null;
 	#failures = 0;
+	#inFlight = false;
 
 	constructor(
 		private readonly source: EdgeLivenessSource,
@@ -101,6 +207,21 @@ export class PushLivenessReporter {
 	}
 
 	async sendOnce(): Promise<boolean> {
+		// 1초 주기라 직전 전송이 아직 안 끝났을 수 있다. 겹쳐 보내지 않고 이번 차례를 건너뛴다 (delta는 다음 신호에 합쳐진다).
+		if (this.#inFlight) {
+			return false;
+		}
+
+		this.#inFlight = true;
+
+		try {
+			return await this.#send();
+		} finally {
+			this.#inFlight = false;
+		}
+	}
+
+	async #send(): Promise<boolean> {
 		const message = this.source.take();
 		const startedAt = Date.now();
 
@@ -109,7 +230,7 @@ export class PushLivenessReporter {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify(message),
-				signal: AbortSignal.timeout(Math.min(5000, this.intervalMs)),
+				signal: AbortSignal.timeout(Math.max(3000, Math.min(5000, this.intervalMs * 3))),
 			});
 
 			if (!res.ok) {

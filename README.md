@@ -18,6 +18,8 @@ tools/      시험 도구
 
 빠른 확인: `curl http://<노드IP>:18080/api/health` → `source: "hook"`, `collector.ok: true`. 화면은 `http://<노드IP>:18080`.
 
+**통합 3D 화면 (origin):** origin 대시보드 첫 화면(`/`)이 모든 edge·시청자를 합친 3D 화면입니다. edge들이 1초마다 보내는 실시간 값을 origin이 합쳐 보여 줍니다(`/api/central/snapshot`, `/api/central/stream`). 기존 화면은 `/overview`에 그대로 있습니다. 예시 값(MOCK)으로 채운 항목은 [docs/mock-data.md](docs/mock-data.md).
+
 
 ### 1. 이미지 빌드 및 업로드
 
@@ -118,7 +120,11 @@ containers:
       - name: MSDASH_MODE
         value: edge # 원본 서버는 origin
       - name: MSDASH_SERVER_ID
-        value: edge-0 # 서버별로 유일한 이름으로 변경
+        value: edge-0 # 서버별로 유일한 이름으로 변경 (한 노드에 여러 개면 Pod 이름 권장: fieldRef metadata.name)
+      - name: NODE_NAME # 이 Pod가 도는 노드 이름. 통합 3D 화면이 노드별로 묶는 데 쓴다
+        valueFrom:
+          fieldRef:
+            fieldPath: spec.nodeName
       - name: MSDASH_HTTP_PORT
         value: "18080"
       - name: MSDASH_PUBLIC_URL
@@ -175,7 +181,7 @@ containers:
 - `MSDASH_DATABASE_URL`의 `127.0.0.1`은 msdash와 DB가 **같은 Pod의 네트워크 네임스페이스**를 공유한다는 가정입니다. DB를 별도 Pod로 운영한다면 Service 주소와 포트를 사용하세요. DB 비밀번호에 URL 예약 문자가 있으면 연결 문자열에 맞게 인코딩해야 합니다.
 - `hostPath`는 해당 노드의 경로에 저장됩니다. Pod가 다른 노드로 옮겨지면 같은 데이터가 보장되지 않으므로 환경에 따라 PVC 등 적절한 영구 볼륨을 사용하세요. 여러 서버가 같은 DB 경로를 공유하지 않도록 합니다.
 - 대시보드의 `containerPort`는 외부 접근을 자동으로 열지 않습니다. Service 또는 hostPort를 환경에 맞게 설정하세요. 같은 노드에서 동일 hostPort를 중복 사용할 수 없습니다.
-- 수집 주기는 기본 10초이고 `MSDASH_COLLECT_INTERVAL_MS`로 변경할 수 있습니다. `MSDASH_NIC_CAPACITY_BPS`는 화면의 용량 기준값이며 실제 NIC 용량을 자동 측정한 값은 아닙니다.
+- 수집 주기는 기본 **1초**(`MSDASH_COLLECT_INTERVAL_MS`)이고, DB에는 10초마다 묶어서 기록합니다(`MSDASH_DB_WRITE_INTERVAL_MS`). edge → origin 실시간 신호도 1초입니다(`MSDASH_HEARTBEAT_INTERVAL_MS`). 예전처럼 10초로 돌리려면 세 값을 10000으로 둡니다. 1초 수집을 쓰려면 훅(`hook/msdash-hook.cjs`) ConfigMap을 새 버전으로 갱신하고 mediasoup 서버를 재시작해야 getStats 호출이 한 주기 안에 고르게 나뉩니다(옛 훅도 동작은 합니다). `MSDASH_NIC_CAPACITY_BPS`는 화면의 용량 기준값이며 실제 NIC 용량을 자동 측정한 값은 아닙니다.
 - 대시보드 API에는 인증이 없으므로 접근 가능한 네트워크를 제한하세요. 실제 적용 전에 `kubectl diff -f <새-yaml>`로 변경 범위를 확인하세요. Pod 종류와 변경 내용에 따라 mediasoup 프로세스가 함께 재시작될 수 있습니다.
 - 저장소의 `deploy/k8s/`는 참고용 overlay입니다. sibling `qos` 경로와 Deployment를 가정하므로, 현재 사용하는 독립 Pod나 다른 배포 구조에 그대로 적용하지 마세요.
 

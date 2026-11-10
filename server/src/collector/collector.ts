@@ -122,7 +122,7 @@ export class Collector extends EventEmitter<CollectorEvents> {
 		this.#status.lastAttemptAt = new Date(startedAt);
 
 		try {
-			const raw = await this.#source.snapshot();
+			const raw = await this.#source.snapshot({ spreadMs: this.#config.hookSpreadMs });
 			const durationMs = Date.now() - startedAt;
 			const ctx = {
 				collectDurationMs: durationMs,

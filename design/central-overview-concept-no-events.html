@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>통합 대시보드 시안 (이벤트 없음)</title>
+<style>
+:root{
+  --bg:#f4f7fb;--card:#fff;--ink:#2d3748;--ink-2:#4a5568;--muted:#a0aec0;--muted-2:#718096;
+  --line:#e2e8f0;--line-soft:#edf2f7;--teal:#4fd1c5;--teal-d:#38b2ac;--teal-soft:#e6fffa;
+  --green:#48bb78;--red:#e53e3e;--amber:#dd6b20;--navy-1:#313860;--navy-2:#151928;
+  --shadow:0 3.5px 5.5px rgba(0,0,0,.02);--radius:15px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 'Segoe UI','Malgun Gothic',Helvetica,sans-serif;font-variant-numeric:tabular-nums;min-height:100vh}
+button,input{font:inherit;color:inherit}button{cursor:pointer}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+
+/* ---------- layout ---------- */
+.brand{display:flex;align-items:center;gap:10px;padding:2px 4px 22px;font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+.brand svg{width:22px;height:22px;color:var(--ink)}
+main{padding:28px 30px 32px;max-width:1640px;margin:0 auto}
+
+/* ---------- cards ---------- */
+.card{min-width:0;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+h2{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sub b{color:var(--green);font-weight:700}
+.grid{display:grid;gap:24px;margin-bottom:24px}
+
+
+/* flow */
+.row-2{grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);align-items:start}
+.flow{display:grid;grid-template-columns:minmax(140px,1fr) 46px minmax(140px,1fr) 46px minmax(170px,1.15fr);align-items:center}
+.flow-col{display:grid;gap:10px}
+.node{position:relative;width:100%;text-align:left;border:1px solid var(--line-soft);border-radius:12px;background:#f8f9fa;padding:14px 16px;min-height:88px}
+.node .n-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.node strong{display:block;font-size:15px;margin:2px 0 4px}
+.node.origin{background:var(--teal-soft);border-color:#b2f5ea}
+.node.edge{display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:10px;min-height:62px;padding:11px 14px;background:#fff;border-color:var(--line);transition:border-color .15s,box-shadow .15s}
+.node.edge strong{margin:0}
+.node.edge .badge{grid-column:2;grid-row:1/3}
+.node.edge:hover,.node.edge.active{border-color:var(--teal);box-shadow:0 0 0 3px #4fd1c529}
+.badge{display:inline-block;border-radius:8px;padding:2px 10px;font-size:12px;font-weight:700;color:#fff;background:var(--green);white-space:nowrap}
+.badge.off{background:#cbd5e0}
+.badge.warn{background:var(--amber)}
+.arrow{position:relative;height:2px;margin:0 8px;background:linear-gradient(90deg,#cbd5e0,var(--teal))}
+.arrow:after{content:'';position:absolute;right:-1px;top:-4px;border:5px solid transparent;border-left:7px solid var(--teal);border-right:0}
+.more{border:0;background:none;color:var(--teal-d);font-size:12px;font-weight:700;text-align:left;padding:4px 4px}
+.edge-detail{margin-top:20px;padding:18px;border-radius:12px;background:#f8f9fa}
+[hidden]{display:none!important}
+.detail-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.detail-title strong{font-size:15px}
+.btn{border:1px solid var(--teal);background:#fff;color:var(--teal-d);border-radius:12px;padding:6px 14px;font-size:11px;font-weight:700;letter-spacing:.03em}
+.btn:hover{background:var(--teal-soft)}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.metric{background:#fff;border-radius:12px;padding:12px 14px}
+.metric .sub{font-size:11px;font-weight:700}
+.metric strong{display:block;font-size:18px;margin-top:2px}
+.bar{height:3px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--teal);border-radius:3px}
+
+/* load card (dark) */
+.load{padding:16px}
+.dark{border-radius:15px;padding:20px 18px 14px;background:linear-gradient(81.62deg,var(--navy-1) 2.25%,var(--navy-2) 79.87%);color:#fff}
+.load-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:6px 6px 16px}
+.node-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.ns{background:#f8f9fa;border-radius:12px;padding:12px 14px}
+.ns .sub{font-size:11px;font-weight:700}
+.ns strong{display:block;font-size:18px;margin-top:2px}
+.ns strong small{font-size:12px;font-weight:700;color:var(--muted);margin-left:2px}
+.ns .note{font-size:11px;font-weight:700;color:var(--muted);margin-top:4px;line-height:1.2}
+.ns.warn{background:#fffaf0}
+.ns.warn strong{color:var(--amber)}
+.dark-label{font-size:11px;font-weight:700;color:#fff;opacity:.6;padding:0 8px 8px}
+.node-group{position:relative;border:1.5px dashed #9fe3dc;border-radius:14px;padding:28px 10px 8px;background:#f7fffe}
+.node-group .g-label{position:absolute;top:7px;left:12px;font-size:11px;font-weight:700;color:var(--teal-d)}
+.hbars{display:grid;gap:4px}
+.hb{display:grid;grid-template-columns:minmax(0,96px) 1fr 40px;align-items:center;gap:12px;border:0;background:none;color:#fff;padding:7px 8px;border-radius:10px;text-align:left}
+.hb:hover,.hb.active{background:#ffffff12}
+.hb .name{font-size:12px;font-weight:700;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb.active .name{opacity:1}
+.hb .track{height:8px;border-radius:8px;background:#ffffff1f;overflow:hidden}
+.hb .track i{display:block;height:100%;border-radius:8px;background:#fff;opacity:.9;transition:background .15s}
+.hb.active .track i,.hb:hover .track i{background:var(--teal);opacity:1}
+.hb .val{font-size:12px;font-weight:700;text-align:right}
+.hb-axis{display:grid;grid-template-columns:minmax(0,96px) 1fr 40px;gap:12px;padding:8px 8px 0;font-size:10px;font-weight:700;color:#fff;opacity:.55}
+.hb-axis div{display:flex;justify-content:space-between}
+.load-body{padding:18px 6px 4px}
+.trend{}
+.trend-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.trend-head strong{font-size:14px}
+.trend-now{font-size:22px;font-weight:700;margin:2px 0 6px}
+.trend-now small{font-size:12px;font-weight:700;color:var(--muted);margin-left:6px}
+#trend{width:100%;height:auto}
+
+/* viewers table */
+.row-3{grid-template-columns:minmax(0,2fr) minmax(300px,1fr);align-items:start}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#fff;border-radius:15px;padding:8px 14px;min-width:240px}
+.search svg{width:14px;height:14px;color:var(--ink)}
+.search input{border:0;outline:0;background:none;width:100%;font-size:12px}
+.search:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px #4fd1c529}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:820px}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:0 12px 10px;border-bottom:1px solid var(--line)}
+td{padding:14px 12px;border-bottom:1px solid var(--line);font-size:13px;font-weight:700;color:var(--ink)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer;transition:background .12s}
+tbody tr:hover,tbody tr.selected{background:#f7fafc}
+tbody tr.selected td:first-child{box-shadow:inset 3px 0 0 var(--teal)}
+tbody tr:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.who{display:flex;align-items:center;gap:12px}
+.avatar{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;background:var(--teal);flex:none}
+.who small{display:block;font-weight:400;color:var(--muted-2);font-size:12px}
+.server-id{color:var(--teal-d);background:var(--teal-soft);border-radius:8px;padding:3px 9px;font-size:12px}
+.late-cell{min-width:110px}
+.late-cell .v{color:var(--teal-d);font-size:13px}
+.late-cell.warn .v{color:var(--amber)}
+.late-cell.warn .bar i{background:var(--amber)}
+.late-cell .bar{width:96px;margin-top:4px}
+td.num{font-weight:600;color:var(--ink-2)}
+.empty td{text-align:center;color:var(--muted);font-weight:400;cursor:default}
+
+.detail{margin-top:20px;padding-top:20px;border-top:1px solid var(--line)}
+.chart{width:100%;height:220px}
+.chart-label{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;font-weight:700;padding:4px 0 0 40px}
+.detail .metrics{margin-top:18px}
+.detail .metric{background:#f8f9fa}
+
+/* timeline */
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{position:relative;display:grid;grid-template-columns:22px 1fr;gap:14px;padding-bottom:22px}
+.timeline li:not(:last-child):before{content:'';position:absolute;left:10px;top:24px;bottom:2px;width:2px;background:var(--line)}
+.t-ico{width:22px;height:22px;display:grid;place-items:center;color:var(--teal)}
+.t-ico svg{width:16px;height:16px}
+.t-ico.warn{color:var(--amber)}.t-ico.ok{color:var(--green)}
+.timeline strong{display:block;font-size:13px}
+.timeline small{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-top:2px}
+
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:4px 4px 0}
+.foot b{color:var(--teal-d)}
+
+/* ---------- responsive ---------- */
+@media(max-width:1280px){.row-2,.row-3{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:860px){
+  main{padding:16px 16px 24px}
+  .flow{grid-template-columns:1fr}
+  .arrow{width:2px;height:26px;margin:6px auto;background:linear-gradient(180deg,#cbd5e0,var(--teal))}
+  .arrow:after{right:-4px;top:auto;bottom:-2px;border:5px solid transparent;border-top:7px solid var(--teal);border-bottom:0}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .search{min-width:0;width:100%}
+}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-users" viewBox="0 0 24 24"><path fill="currentColor" d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm7.5 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM9 13c-3.3 0-7 1.6-7 4v3h14v-3c0-2.4-3.7-4-7-4zm7.5 0c-.6 0-1.2.1-1.8.2 1.4.9 2.3 2.2 2.3 3.8v3h5v-3c0-2.2-3-4-5.5-4z"/></symbol>
+  <symbol id="i-cast" viewBox="0 0 24 24"><path fill="currentColor" d="M4 5h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6v2h3v2H7v-2h3v-2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm6 3v6l5-3z"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><path fill="currentColor" d="M4 3h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm0 10h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm3-7.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><path fill="currentColor" d="M9 2h2v2h2V2h2v2h2a3 3 0 0 1 3 3v2h2v2h-2v2h2v2h-2v2a3 3 0 0 1-3 3h-2v2h-2v-2h-2v2H9v-2H7a3 3 0 0 1-3-3v-2H2v-2h2v-2H2V9h2V7a3 3 0 0 1 3-3h2zm0 6v8h6V8z"/></symbol>
+  <symbol id="i-mem" viewBox="0 0 24 24"><path fill="currentColor" d="M2 7h20v8h-2v3H4v-3H2zm4 3v3h2v-3zm5 0v3h2v-3zm5 0v3h2v-3z"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2 10 5-10 5L2 7zm-7.6 8.8L12 14.6l7.6-3.8L22 12l-10 5-10-5zm0 5L12 19.6l7.6-3.8L22 17l-10 5-10-5z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM16 16l5 5"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2 1 21h22zm1 15h-2v-2h2zm0-4h-2V9h2z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.5 14.5L6 12l1.4-1.4 3.1 3.1 6.1-6.1L18 9z"/></symbol>
+</svg>
+
+
+<main>
+  <div class="brand"><svg viewBox="0 0 24 24"><use href="#i-server"/></svg>SFU Monitor</div>
+
+    <!-- flow + load -->
+    <section class="grid row-2">
+      <div class="card" id="flow">
+        <div class="card-head">
+          <div><h2>원본 서버 연결 흐름</h2><div class="sub">중계 서버를 선택하면 상세 상태를 볼 수 있습니다.</div></div>
+          <span class="sub"><b>방송 1개</b> · 중계 서버 4개</span>
+        </div>
+        <div class="flow">
+          <div class="flow-col"><div class="node"><span class="n-label">송출자</span><strong>1명</strong><span class="badge">송출 중</span></div></div>
+          <div class="arrow"></div>
+          <div class="flow-col"><div class="node origin"><span class="n-label">원본 서버</span><strong>origin-01</strong><span class="badge">정상 동작</span></div></div>
+          <div class="arrow"></div>
+          <div class="flow-col node-group" id="edges"><span class="g-label">node-01</span>
+            <button class="node edge" data-edge="0"><span class="n-label">중계 서버</span><strong>edge-01</strong><span class="badge">연결됨</span></button>
+            <button class="node edge" data-edge="1"><span class="n-label">중계 서버</span><strong>edge-02</strong><span class="badge">연결됨</span></button>
+            <button class="node edge" data-edge="2"><span class="n-label">중계 서버</span><strong>edge-03</strong><span class="badge">연결됨</span></button>
+            <div class="more-list flow-col" hidden><button class="node edge" data-edge="3"><span class="n-label">중계 서버</span><strong>edge-04</strong><span class="badge">연결됨</span></button></div>
+            <button class="more" id="more" aria-expanded="false">외 1개 서버 더보기 ↓</button>
+          </div>
+        </div>
+        <div class="edge-detail" id="edge-detail" hidden>
+          <div class="detail-title"><div><strong id="edge-name"></strong><div class="sub">시청자 및 Pod 상태 · 예시</div></div><button class="btn" id="close-edge">닫기</button></div>
+          <div class="metrics">
+            <div class="metric"><span class="sub">시청자 수</span><strong id="edge-viewers"></strong></div>
+            <div class="metric"><span class="sub">Container CPU</span><strong id="edge-cpu"></strong><div class="bar"><i id="edge-cpu-bar"></i></div></div>
+            <div class="metric"><span class="sub">Container 메모리</span><strong id="edge-memory"></strong><div class="bar"><i id="edge-mem-bar"></i></div></div>
+            <div class="metric"><span class="sub">Replica 번호</span><strong id="edge-replicas"></strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card load">
+        <div class="load-head"><div><h2>노드 · 중계 서버 부하</h2><div class="sub">node-01 · 중계 서버 4대 실행 중 · 예시</div></div><span class="badge warn" title="qdisc drop 발생">주의</span></div>
+        <div class="node-stats">
+          <div class="ns"><span class="sub">Node CPU</span><strong>41%</strong><div class="bar"><i style="width:41%"></i></div></div>
+          <div class="ns"><span class="sub">Node 메모리</span><strong>58%</strong><div class="bar"><i style="width:58%"></i></div></div>
+          <div class="ns warn" title="0보다 크면 주황색으로 표시"><span class="sub">qdisc drop</span><strong>12<small>/s</small></strong><div class="note">최근 5분 3,480건</div></div>
+        </div>
+        <div class="dark">
+          <div class="dark-label">중계 서버별 Container CPU · 누르면 상세를 엽니다</div>
+          <div class="hbars" id="bars" aria-label="중계 서버별 CPU 사용률 예시"></div>
+          <div class="hb-axis"><span></span><div><span>0</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div><span></span></div>
+        </div>
+        <div class="load-body">
+          <div class="trend">
+            <div class="trend-head"><strong>시청자 추이</strong><span class="sub">최근 30분 · 예시</span></div>
+            <div class="trend-now"><span id="trend-now"></span><small id="trend-who"></small></div>
+            <svg id="trend" viewBox="0 0 520 170" role="img" aria-label="시청자 수 추이 예시 그래프"></svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- viewers + events -->
+    <section class="grid">
+      <div class="card" id="viewers">
+        <div class="card-head">
+          <div><h2>시청자</h2><div class="sub" id="count"></div></div>
+          <label class="search"><svg><use href="#i-search"/></svg><input id="search" placeholder="시청자 또는 방송 검색" aria-label="시청자 또는 방송 검색"></label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>시청자</th><th>접속 SFU</th><th>LATE 비율</th><th>Loss</th><th>Freeze</th><th>RTT</th><th>레이어</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="detail" id="detail" hidden>
+          <div class="detail-title"><div><h2 id="viewer-name"></h2><div class="sub" id="viewer-sub"></div></div><button class="btn" id="close-viewer">닫기</button></div>
+          <div class="detail-title"><strong>LATE 비율 추이</strong><span class="sub">최근 30분 · 예시</span></div>
+          <svg class="chart" viewBox="0 0 1000 220" preserveAspectRatio="none" role="img" aria-label="시청자 LATE 비율 추이 예시 그래프">
+            <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4fd1c5" stop-opacity=".55"/><stop offset="1" stop-color="#4fd1c5" stop-opacity="0"/></linearGradient></defs>
+            <g stroke="#e2e8f0" stroke-dasharray="5 5"><path d="M40 20H1000M40 70H1000M40 120H1000M40 170H1000"/></g>
+            <g fill="#a0aec0" font-size="11" font-weight="700"><text x="0" y="24">3%</text><text x="0" y="74">2%</text><text x="0" y="124">1%</text><text x="0" y="174">0%</text></g>
+            <path id="chart-area" fill="url(#fill)"></path>
+            <path id="chart-line" fill="none" stroke="#4fd1c5" stroke-width="3" vector-effect="non-scaling-stroke"></path>
+          </svg>
+          <div class="chart-label"><span>30분 전</span><span>20분 전</span><span>10분 전</span><span>현재</span></div>
+          <div class="metrics" id="viewer-metrics"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <footer class="foot"><span>LATE 비율의 정의와 실제 수집 방식은 별도 확인이 필요합니다.</span><span><b>SFU Monitor</b> · 화면 시안</span></footer>
+</main>
+
+<script>
+const edges=[['edge-01',1,32,46,0],['edge-02',1,24,38,1],['edge-03',1,19,31,2],['edge-04',1,17,29,3]];
+const viewers=[
+  {name:'viewer-a12f',stream:'Live Studio',edge:'edge-01',loss:'0.3%',late:1.2,freeze:'0회',rtt:'31 ms',layer:'L2 (High)',points:[.5,.7,.4,.8,.6,1.3,.9,1.1,1.2]},
+  {name:'viewer-b84c',stream:'Live Studio',edge:'edge-02',loss:'1.1%',late:2.4,freeze:'1회',rtt:'56 ms',layer:'L1 (Mid)',points:[.8,.9,1.1,1.4,1.1,1.6,1.8,2.1,2.4]},
+  {name:'viewer-c03d',stream:'Live Studio',edge:'edge-03',loss:'0.1%',late:0.4,freeze:'0회',rtt:'24 ms',layer:'L2 (High)',points:[.2,.4,.3,.4,.6,.3,.2,.5,.4]},
+  {name:'viewer-d729',stream:'Live Studio',edge:'edge-04',loss:'0.6%',late:0.8,freeze:'0회',rtt:'42 ms',layer:'L0 (Low)',points:[.4,.6,.7,.5,.8,.6,.9,.7,.8]}
+];
+/* 최근 30분 시청자 수 (3분 간격, 예시) */
+const trend=[[1,1,1,1,1,1,1,1,1,1,1],[0,0,1,1,1,1,1,1,1,1,1],[0,0,0,0,1,1,1,1,1,1,1],[0,0,0,0,0,0,0,1,1,1,1]];
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+let selected=-1;
+
+/* CPU bars */
+$('#bars').innerHTML=edges.map((e,i)=>`<button class="hb" data-edge="${i}" title="${e[0]}" aria-label="${e[0]} CPU ${e[2]}%"><span class="name">${e[0]}</span><span class="track"><i style="width:${e[2]}%"></i></span><span class="val">${e[2]}%</span></button>`).join('');
+
+function rows(){
+  const q=$('#search').value.trim().toLowerCase();
+  const m=viewers.map((v,i)=>({...v,i})).filter(v=>(v.name+' '+v.stream+' '+v.edge).toLowerCase().includes(q));
+  $('#count').innerHTML=`<b>${m.length}명</b> 전체 서버에 연결됨 · 예시`;
+  $('#rows').innerHTML=m.map(v=>`<tr tabindex="0" data-i="${v.i}" class="${v.i===selected?'selected':''}">
+    <td><div class="who"><span class="avatar">${v.name.slice(7,9).toUpperCase()}</span><div>${v.name}<small>${v.stream}</small></div></div></td>
+    <td><span class="server-id">${v.edge}</span></td>
+    <td class="late-cell ${v.late>=2?'warn':''}"><span class="v">${v.late.toFixed(1)}%</span><div class="bar"><i style="width:${Math.min(v.late/3,1)*100}%"></i></div></td>
+    <td class="num">${v.loss}</td><td class="num">${v.freeze}</td><td class="num">${v.rtt}</td><td class="num">${v.layer}</td></tr>`).join('')
+    ||'<tr class="empty"><td colspan="7">검색 결과가 없습니다.</td></tr>';
+  $$('tr[data-i]').forEach(el=>{el.onclick=()=>showViewer(+el.dataset.i);el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click()}}});
+}
+function showViewer(i){
+  selected=i;const v=viewers[i];
+  $('#detail').hidden=false;
+  $('#viewer-name').textContent=v.name;
+  $('#viewer-sub').textContent=v.stream+' · '+v.edge;
+  $('#viewer-metrics').innerHTML=[['수신 레이어',v.layer],['Loss',v.loss],['RTT',v.rtt],['Freeze',v.freeze]].map(x=>`<div class="metric"><span class="sub">${x[0]}</span><strong>${x[1]}</strong></div>`).join('');
+  const p=v.points.map((n,j)=>[40+j*960/(v.points.length-1),170-n*50]);
+  let d=`M${p[0][0]} ${p[0][1]}`;
+  for(let j=1;j<p.length;j++){const [x0,y0]=p[j-1],[x1,y1]=p[j],cx=(x0+x1)/2;d+=` C${cx} ${y0} ${cx} ${y1} ${x1} ${y1}`}
+  $('#chart-line').setAttribute('d',d);
+  $('#chart-area').setAttribute('d',d+' L1000 170 L40 170 Z');
+  rows();
+}
+function drawTrend(i){
+  const data=i==null?trend[0].map((_,k)=>trend.reduce((a,t)=>a+t[k],0)):trend[i];
+  const max=Math.max(2,...data),L=34,R=512,T=10,B=140,n=data.length;
+  const X=k=>L+k*(R-L)/(n-1),Y=v=>B-v/max*(B-T);
+  let grid='',d=`M${X(0)} ${Y(data[0])}`;
+  for(let v=0;v<=max;v++)grid+=`<path d="M${L} ${Y(v)}H${R}" stroke="#e2e8f0" stroke-dasharray="4 4"/><text x="${L-10}" y="${Y(v)+4}" text-anchor="end" fill="#a0aec0" font-size="11" font-weight="700">${v}</text>`;
+  for(let k=1;k<n;k++)d+=` H${X(k)} V${Y(data[k])}`;
+  const ticks=[[0,'30분 전'],[(n-1)/3,'20분 전'],[(n-1)*2/3,'10분 전'],[n-1,'현재']].map(([k,t],j)=>`<text x="${X(k)}" y="162" text-anchor="${j===0?'start':j===3?'end':'middle'}" fill="#a0aec0" font-size="11" font-weight="700">${t}</text>`).join('');
+  $('#trend').innerHTML=`<defs><linearGradient id="tfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4fd1c5" stop-opacity=".45"/><stop offset="1" stop-color="#4fd1c5" stop-opacity="0"/></linearGradient></defs>${grid}<path d="${d} V${B} H${L} Z" fill="url(#tfill)"/><path d="${d}" fill="none" stroke="#4fd1c5" stroke-width="2.5" stroke-linejoin="round"/><circle cx="${X(n-1)}" cy="${Y(data[n-1])}" r="4" fill="#fff" stroke="#38b2ac" stroke-width="2.5"/>${ticks}`;
+  $('#trend-now').textContent=data[n-1]+'명';
+  $('#trend-who').textContent=i==null?'전체 서버':edges[i][0];
+}
+function showEdge(i){
+  drawTrend(i);
+  $$('.edge,#bars .hb').forEach(x=>x.classList.toggle('active',+x.dataset.edge===i));
+  if(i===3&&$('.more-list').hidden)toggleMore();
+  const e=edges[i];
+  $('#edge-name').textContent=e[0];
+  $('#edge-viewers').textContent=e[1]+'명';
+  $('#edge-cpu').textContent=e[2]+'%';$('#edge-cpu-bar').style.width=e[2]+'%';
+  $('#edge-memory').textContent=e[3]+'%';$('#edge-mem-bar').style.width=e[3]+'%';
+  $('#edge-replicas').textContent=e[4]+'번';
+  $('#edge-detail').hidden=false;
+}
+function toggleMore(){
+  const list=$('.more-list'),b=$('#more');list.hidden=!list.hidden;
+  b.setAttribute('aria-expanded',String(!list.hidden));
+  b.textContent=list.hidden?'외 1개 서버 더보기 ↓':'접기 ↑';
+}
+$('#search').oninput=rows;
+$('#close-viewer').onclick=()=>{selected=-1;$('#detail').hidden=true;rows()};
+$$('.edge,#bars .hb').forEach(b=>b.onclick=()=>showEdge(+b.dataset.edge));
+$('#close-edge').onclick=()=>{$('#edge-detail').hidden=true;drawTrend();$$('.edge,#bars .hb').forEach(x=>x.classList.remove('active'))};
+$('#more').onclick=toggleMore;
+drawTrend();
+rows();
+</script>
+</body></html>

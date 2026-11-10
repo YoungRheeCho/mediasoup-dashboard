@@ -26,7 +26,8 @@ export class HttpError extends Error {
 	}
 }
 
-const MAX_BODY = 64 * 1024;
+// edge → origin 1초 heartbeat에 시청자 목록(시청자 1명당 약 200바이트)이 실린다. 시청자 1만 명 정도까지 받는다.
+const MAX_BODY = 4 * 1024 * 1024;
 
 /**
  * 의존성 없는 작은 JSON HTTP 라우터. 경로의 `:name` 조각은 params로 들어온다.

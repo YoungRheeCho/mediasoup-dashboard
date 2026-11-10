@@ -8,7 +8,7 @@ import type { MediasoupSource } from './types.js';
 const logger = createLogger('hook-source');
 
 /**
- * 훅 유닉스 소켓 클라이언트. 요청마다 연결을 새로 연다 (10초 주기라 비용이 작고, 훅이 재시작돼도 신경 쓸 게 없다).
+ * 훅 유닉스 소켓 클라이언트. 요청마다 연결을 새로 연다 (유닉스 소켓이라 1초 주기에도 비용이 작고, 훅이 재시작돼도 신경 쓸 게 없다).
  */
 export class HookSource implements MediasoupSource {
 	readonly kind = 'hook' as const;
@@ -31,8 +31,8 @@ export class HookSource implements MediasoupSource {
 		return health;
 	}
 
-	snapshot(): Promise<RawSnapshot> {
-		return this.#request<RawSnapshot>('snapshot');
+	snapshot(opts: { spreadMs?: number } = {}): Promise<RawSnapshot> {
+		return this.#request<RawSnapshot>('snapshot', { spreadMs: opts.spreadMs ?? 0 });
 	}
 
 	transportDetail(transportId: string): Promise<RawTransportDetail> {

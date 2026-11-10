@@ -207,8 +207,10 @@ function startSocketServer({ registry, loop, mediasoupVersion }) {
 				consumers: registry.consumers.size,
 			},
 		}),
-		snapshot: async () =>
-			takeSnapshot({ registry, loop, concurrency, callTimeoutMs }),
+		// spreadMs: 사이드카가 1초 주기로 수집할 때 getStats() 호출을 이 시간 동안 고르게 나눠 보낸다 (H4 순간 몰림 완화).
+		// 옛 사이드카는 params를 보내지 않으므로 0(한꺼번에)으로 동작한다.
+		snapshot: async params =>
+			takeSnapshot({ registry, loop, concurrency, callTimeoutMs, spreadMs: clampInt(params.spreadMs, 0, 10000, 0) }),
 		transportDetail: async params =>
 			takeTransportDetail({ registry, params, concurrency, callTimeoutMs }),
 	};
@@ -291,10 +293,13 @@ function writeLine(socket, message) {
 	} catch (error) {}
 }
 
-async function takeSnapshot({ registry, loop, concurrency, callTimeoutMs }) {
+async function takeSnapshot({ registry, loop, concurrency, callTimeoutMs, spreadMs = 0 }) {
 	const startedAt = Date.now();
 	const errors = [];
-	const call = createLimitedCaller({ concurrency, callTimeoutMs, errors });
+	const totalCalls = registry.workers.size + registry.transports.size + registry.producers.size + registry.consumers.size;
+	// 호출 시작 사이 최소 간격. 예: spreadMs 600, 호출 300개 → 2ms마다 하나씩 시작한다.
+	const gapMs = spreadMs > 0 && totalCalls > 1 ? spreadMs / totalCalls : 0;
+	const call = createLimitedCaller({ concurrency, callTimeoutMs, errors, gapMs });
 
 	const workers = Array.from(registry.workers.values()).map(worker => ({
 		pid: worker.pid,
@@ -599,12 +604,33 @@ function pickTransportStats(stat) {
 /**
  * 동시 호출 수와 호출당 시간을 제한한다 (H4). 실패는 null로 돌려주고 errors에 남긴다.
  */
-function createLimitedCaller({ concurrency, callTimeoutMs, errors }) {
+function createLimitedCaller({ concurrency, callTimeoutMs, errors, gapMs = 0 }) {
 	let active = 0;
 	const queue = [];
+	let nextStartAt = 0;
+	let waiting = null;
 
 	const next = () => {
 		while (active < concurrency && queue.length > 0) {
+			// gapMs > 0 이면 호출 시작을 일정 간격으로 벌린다 (한 주기 안에서 고르게).
+			if (gapMs > 0) {
+				const now = Date.now();
+
+				if (now < nextStartAt) {
+					if (!waiting) {
+						waiting = setTimeout(() => {
+							waiting = null;
+							next();
+						}, Math.ceil(nextStartAt - now));
+					}
+
+					return;
+				}
+
+				// 기준 시각에서 gapMs씩 더해 가므로, 타이머가 늦게 깨면 밀린 만큼 바로 이어서 시작한다 (전체가 spreadMs 안에 끝나도록).
+				nextStartAt = (nextStartAt || now) + gapMs;
+			}
+
 			const job = queue.shift();
 
 			active++;

@@ -48,7 +48,13 @@ spec:
           env:
             - name: MSDASH_MODE
               value: edge
-            - name: NODE_NAME # edge 이름 = 노드 이름 (H11)
+            # edge 이름: 한 노드에 edge가 여러 개면 노드 이름이 겹치므로 Pod 이름을 쓴다.
+            # (Pod 이름이 재시작마다 바뀌는 Deployment라면, 통합 화면은 10분 넘게 신호 없는 옛 이름을 숨긴다)
+            - name: MSDASH_SERVER_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_NAME # 이 edge가 도는 노드 (통합 화면에서 노드별로 묶음)
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName

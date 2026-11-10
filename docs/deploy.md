@@ -94,9 +94,15 @@ kubectl -n qos delete secret msdash-db
 
 | env | 기본값 | 설명 |
 |---|---|---|
-| `MSDASH_COLLECT_INTERVAL_MS` | 10000 | 수집 주기 |
+| `MSDASH_COLLECT_INTERVAL_MS` | 1000 | 수집 주기 (RTCP Receiver Report 주기가 약 1초라 더 줄여도 loss·RTT는 같다) |
+| `MSDASH_DB_WRITE_INTERVAL_MS` | 10000 | DB 기록·알림 평가 주기. 1초 수집 묶음을 합쳐서 쓴다 (`server/src/db/downsample.ts`) |
+| `MSDASH_HOOK_SPREAD_MS` | 수집 주기의 60% | 훅이 getStats 호출을 이 시간 동안 고르게 나눠 보낸다. 0이면 한꺼번에 (예전 동작) |
+| `MSDASH_HOOK_TIMEOUT_MS` | max(3000, 수집 주기×3) | 훅 응답 대기 시간 |
+| `NODE_NAME` | — | 이 Pod의 노드 (Downward API `spec.nodeName`). 통합 3D 화면의 노드 묶음 |
+| `MSDASH_K8S_DISCOVERY` (origin) | 0 | 1이면 k8s API로 노드·Pod 목록 조회. `deploy/k8s/origin/rbac.yaml`과 `serviceAccountName` 필요 |
+| `MSDASH_K8S_EDGE_SELECTOR` / `_ORIGIN_SELECTOR` (origin) | `app=mediasoup-edge` / `app=mediasoup-origin` | 조회할 Pod 라벨 |
 | `MSDASH_RETENTION_VIEWER_HOURS` / `_RAW_DAYS` / `_AGG_DAYS` | 48 / 7 / 14 | 보관 기간 (재시작 시 적용) |
-| `MSDASH_HEARTBEAT_INTERVAL_MS` | 10000 | edge → origin 신호 주기 |
+| `MSDASH_HEARTBEAT_INTERVAL_MS` | 1000 | edge → origin 신호 주기. 통합 3D 화면의 실시간 값(시청자 목록 포함)이 함께 간다. origin DB에는 10초마다만 기록 |
 | `MSDASH_LIVENESS_MODE` | push | `pull`이면 origin이 edge에 묻는다 (양쪽 같게) |
 | `MSDASH_NIC_CAPACITY_BPS` | 1e9 | NIC 용량 표시용 (Overview "송신 트래픽") |
 | `MSDASH_MOCK` | 1 | 0이면 mock 값을 채우지 않는다 (해당 칸은 "—") |
