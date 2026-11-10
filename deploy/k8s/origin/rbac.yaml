@@ -1,0 +1,57 @@
+# origin 대시보드가 k8s API로 노드·Pod 목록을 읽기 위한 권한 (읽기 전용).
+# 통합 3D 화면에서 "노드가 몇 개인지, 각 edge Pod가 어느 노드에 있는지"를 자동으로 보여 줄 때 쓴다.
+# 적용하지 않아도 대시보드는 동작한다: 그때는 edge가 heartbeat로 알려 주는 노드 이름(NODE_NAME)만 쓴다.
+#
+#   필요한 권한: nodes list (클러스터 범위), pods list (qos 네임스페이스)
+#   origin Deployment에 serviceAccountName: msdash-discovery 와 MSDASH_K8S_DISCOVERY=1 이 필요하다 (patch.yaml).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: msdash-discovery
+  namespace: qos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: msdash-node-reader
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: msdash-node-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: msdash-node-reader
+subjects:
+  - kind: ServiceAccount
+    name: msdash-discovery
+    namespace: qos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: msdash-pod-reader
+  namespace: qos
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: msdash-pod-reader
+  namespace: qos
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: msdash-pod-reader
+subjects:
+  - kind: ServiceAccount
+    name: msdash-discovery
+    namespace: qos

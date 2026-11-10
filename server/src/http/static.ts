@@ -23,9 +23,14 @@ const TYPES: Record<string, string> = {
  * 빌드된 화면(web/dist)을 서빙한다. /api가 아닌 GET 중 파일이 없는 경로는 index.html (SPA 라우팅).
  * 해시가 붙은 assets/는 오래 캐시하고 index.html은 캐시하지 않는다.
  */
-export function staticHandler(dir: string): (req: http.IncomingMessage, res: http.ServerResponse) => boolean {
+export function staticHandler(
+	dir: string,
+	opts: { rootPage?: string | null } = {}
+): (req: http.IncomingMessage, res: http.ServerResponse) => boolean {
 	const root = resolve(dir);
 	const index = join(root, 'index.html');
+	// origin은 첫 화면(/)을 통합 3D 화면(central.html)으로 연다. 기존 화면은 /overview 등 그대로.
+	const rootPage = opts.rootPage ? join(root, opts.rootPage) : null;
 
 	if (!existsSync(index)) {
 		logger.warn('web UI not found at %s (build web/ first); only /api is served', root);
@@ -43,6 +48,10 @@ export function staticHandler(dir: string): (req: http.IncomingMessage, res: htt
 		}
 
 		let file = normalize(join(root, decodeURIComponent(url.pathname)));
+
+		if ((url.pathname === '/' || url.pathname === '/central') && rootPage && existsSync(rootPage)) {
+			file = rootPage;
+		}
 
 		if (file !== root && !file.startsWith(root + sep)) {
 			return false;

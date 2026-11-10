@@ -18,6 +18,8 @@ tools/      시험 도구
 
 빠른 확인: `curl http://<노드IP>:18080/api/health` → `source: "hook"`, `collector.ok: true`. 화면은 `http://<노드IP>:18080`.
 
+**통합 3D 화면 (origin):** origin 대시보드 첫 화면(`/`)이 모든 edge·시청자를 합친 3D 화면입니다. edge들이 1초마다 보내는 실시간 값을 origin이 합쳐 보여 줍니다(`/api/central/snapshot`, `/api/central/stream`). 기존 화면은 `/overview`에 그대로 있습니다. 수집은 1초, DB 기록은 10초 주기입니다([docs/deploy.md](docs/deploy.md) 설정 표). 예시 값(MOCK)으로 채운 항목은 [docs/mock-data.md](docs/mock-data.md).
+
 
 ### 1. 이미지 빌드 및 업로드
 
@@ -114,7 +116,11 @@ containers:
       - name: MSDASH_MODE
         value: edge # 원본 서버는 origin
       - name: MSDASH_SERVER_ID
-        value: edge-0 # 서버별로 유일한 이름으로 변경
+        value: edge-0 # 서버별로 유일한 이름으로 변경 (한 노드에 여러 개면 Pod 이름 권장: fieldRef metadata.name)
+      - name: NODE_NAME # 이 Pod가 도는 노드 이름. 통합 3D 화면이 노드별로 묶는 데 쓴다
+        valueFrom:
+          fieldRef:
+            fieldPath: spec.nodeName
       - name: MSDASH_HTTP_PORT
         value: "18080"
       - name: MSDASH_PUBLIC_URL

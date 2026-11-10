@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SFU Monitor 3D</title>
+<style>
+:root{
+  --bg:#050816;--glass:rgba(8,13,42,.72);--glass-2:rgba(15,21,53,.85);--line:#ffffff1a;
+  --ink:#fff;--muted:#a0aec0;--blue:#0075ff;--cyan:#2cd9ff;--green:#01b574;--amber:#ffb547;--red:#ff4d6d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 'Segoe UI','Malgun Gothic',Helvetica,sans-serif;font-variant-numeric:tabular-nums;overflow:hidden}
+button,input{font:inherit;color:inherit}button{cursor:pointer}
+[hidden]{display:none!important}
+
+.app{display:grid;grid-template-columns:minmax(0,1fr) 360px;height:100vh}
+
+/* ---------- 3D scene ---------- */
+#scene{position:relative;overflow:hidden;background:#050a24}
+#scene canvas{display:block}
+.labels{position:absolute;inset:0;cursor:grab;touch-action:none}
+.labels:active{cursor:grabbing}
+.labels.hover{cursor:pointer}
+.labels.movable{cursor:move}
+.hud{position:absolute;z-index:5}
+.tl{top:22px;left:24px;pointer-events:none}
+.brand{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.brand svg{width:22px;height:22px}
+.hint{margin-top:6px;font-size:12px;color:var(--muted)}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;pointer-events:auto}
+.tool{border:1px solid #ffffff2a;background:var(--glass);backdrop-filter:blur(10px);border-radius:10px;padding:6px 11px;font-size:11px;font-weight:700}
+.tool:hover{border-color:var(--blue);background:#0075ff2e}
+.tool.primary{border-color:#0075ff99;background:#0075ff40}
+.br{right:20px;bottom:18px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;padding:10px 14px;border-radius:14px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);font-size:11px;font-weight:700;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:16px;height:3px;border-radius:3px;background:var(--c,#2cd9ff);box-shadow:0 0 8px var(--c,#2cd9ff)}
+.legend i.drop{width:7px;height:7px;border-radius:50%;--c:var(--amber)}
+.legend .sep{width:1px;height:14px;background:var(--line)}
+.fallback{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--muted);padding:24px}
+
+/* labels attached to 3D objects */
+.lbl{pointer-events:auto;cursor:pointer;padding:5px 11px;border-radius:11px;background:rgba(6,11,40,.78);border:1px solid #ffffff24;backdrop-filter:blur(8px);font-size:12px;font-weight:700;white-space:nowrap;text-align:center;transition:border-color .15s,box-shadow .15s,opacity .2s;user-select:none}
+.lbl small{display:block;font-size:10px;font-weight:600;color:var(--muted)}
+.lbl .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;box-shadow:0 0 6px var(--green);vertical-align:1px}
+.lbl .dot.live{background:var(--red);box-shadow:0 0 6px var(--red)}
+.lbl .dot.warn{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.lbl .chip{display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--c);box-shadow:0 0 8px var(--c);margin-right:6px;vertical-align:0}
+.lbl.edge-l{border-color:color-mix(in srgb,var(--c) 60%,transparent)}
+.lbl.v{padding:3px 8px;font-size:11px;border-left:3px solid var(--c)}
+.lbl.v small{font-size:9px}
+.lbl.v.warn small{color:var(--amber)}
+.lbl.v.off{opacity:0;pointer-events:none}
+.lbl:hover,.lbl.sel{border-color:var(--cyan);box-shadow:0 0 14px #2cd9ff55;opacity:1!important}
+.lbl.v.sel,.lbl.v:hover{border-left-color:var(--c)}
+.lbl.dim{opacity:.4}
+.lbl.v.dim{opacity:.18}
+.marquee{position:absolute;z-index:4;border:1px solid var(--cyan);background:#2cd9ff1a;border-radius:4px;pointer-events:none;box-shadow:0 0 18px #2cd9ff33}
+.labels.boxmode{cursor:crosshair}
+.tool.on{border-color:var(--cyan);background:#2cd9ff30;box-shadow:0 0 12px #2cd9ff40}
+.tool kbd{font:inherit;font-size:10px;color:var(--muted);margin-left:4px}
+.mselbar{top:22px;right:20px;display:flex;align-items:center;gap:8px;padding:7px 8px 7px 14px;border-radius:14px;background:var(--glass);border:1px solid #2cd9ff66;backdrop-filter:blur(14px);font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 0 20px #2cd9ff22}
+.mselbar b{color:var(--cyan)}
+.mselbar span{color:var(--muted);font-weight:600}
+.mselbar .tool{margin:0}
+.lbl.v.msel{border-color:var(--cyan);box-shadow:0 0 12px #2cd9ff66}
+.vw.msel{border-color:#2cd9ff88;background:#2cd9ff12}
+.lbl.join{pointer-events:none;cursor:default;background:rgba(6,11,40,.9);border-color:var(--c,#2cd9ff);box-shadow:0 0 18px color-mix(in srgb,var(--c,#2cd9ff) 45%,transparent);transition:opacity .35s}
+.lbl.join small{display:block;font-size:10px;color:var(--muted);font-weight:700}
+.lbl.join b{color:var(--c)}
+.lbl.join.hide{opacity:0}
+.lbl.ping{border-color:var(--c);box-shadow:0 0 22px var(--c)}
+.lbl.tag{background:#0075ff33;border-color:#0075ff88;color:#9cc9ff;font-size:11px;cursor:default;pointer-events:none}
+
+/* detail panel (overlay, bottom-left) */
+.bl{left:20px;bottom:18px;width:min(420px,calc(100% - 40px))}
+.panel{border-radius:18px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);padding:18px}
+.p-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.p-head h2{margin:0;font-size:17px;display:flex;align-items:center;gap:8px}
+.p-head h2 .chip{width:11px;height:11px;border-radius:4px;background:var(--c);box-shadow:0 0 10px var(--c)}
+.sub{font-size:12px;color:var(--muted)}
+.btn{border:1px solid var(--blue);background:transparent;border-radius:10px;padding:5px 12px;font-size:11px;font-weight:700}
+.btn:hover{background:#0075ff33}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.metric{background:var(--glass-2);border-radius:12px;padding:10px 12px}
+.metric .sub{font-size:11px;font-weight:700}
+.metric strong{display:block;font-size:17px}
+.bar{height:3px;border-radius:3px;background:#2d2e5f;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c,var(--blue));border-radius:3px}
+.bar i.warn{background:var(--amber)}
+.spark{width:100%;height:70px;margin:2px 0 12px}
+.badge{display:inline-block;border-radius:8px;padding:2px 10px;font-size:11px;font-weight:700;color:#fff;background:var(--green);white-space:nowrap}
+.badge.warn{background:var(--amber);color:#1a1300}
+
+/* ---------- right column ---------- */
+.side{overflow-y:auto;padding:20px 18px;display:grid;align-content:start;gap:16px;background:linear-gradient(180deg,#0a0f33,#060a24);border-left:1px solid var(--line)}
+.side .panel{background:rgba(255,255,255,.03)}
+.side h3{margin:0;font-size:15px}
+.ts{position:relative;display:grid;gap:8px;margin-bottom:14px}
+.ts-c{background:var(--glass-2);border-radius:12px;padding:10px 12px 6px}
+.ts-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ts-h .sub{font-size:11px;font-weight:700}
+.ts-v{font-size:17px;font-weight:700;line-height:1.2}
+.ts-v small{font-size:11px;color:var(--muted);margin-left:2px;font-weight:700}
+.ts-c.warn .ts-v{color:var(--amber)}
+.ts-plot{position:relative;margin-top:4px}
+.ts-plot svg{display:block;width:100%;height:62px}
+.ts-y{position:absolute;left:0;font-size:9px;font-weight:700;color:#6b7a99;line-height:1;pointer-events:none}
+.ts-cross{position:absolute;top:0;bottom:0;width:1px;background:#ffffff66;pointer-events:none}
+.ts-dot{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;border:2px solid var(--c);background:#0f1535;pointer-events:none}
+.ts-x{display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--muted);padding:0 2px}
+.ts-x b{color:var(--ink);font-weight:700}
+.list-label{font-size:11px;font-weight:700;color:var(--muted);margin:2px 0 6px}
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.chip-e{display:grid;grid-template-columns:22px 1fr;align-items:center;gap:8px;border:1px solid #ffffff14;background:#ffffff06;border-radius:10px;padding:6px 8px;text-align:left;transition:opacity .15s,border-color .15s,background .15s}
+.chip-e .ic{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 22%,#0f1535);color:var(--c);box-shadow:0 0 10px color-mix(in srgb,var(--c) 35%,transparent)}
+.chip-e .ic svg{width:13px;height:13px}
+.chip-e b{display:block;font-size:12px}
+.chip-e small{display:block;font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap}
+.chip-e:hover{border-color:color-mix(in srgb,var(--c) 60%,transparent)}
+.chip-e.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.chips.filtered .chip-e:not(.on){opacity:.4}
+.list-head{display:flex;justify-content:space-between;align-items:baseline;margin:4px 0 6px}
+.list-head .list-label{margin:0}
+.link{border:0;background:none;padding:0;font-size:11px;font-weight:700;color:var(--cyan)}
+.search{display:flex;align-items:center;gap:8px;border:1px solid #ffffff30;background:#0f1535;border-radius:12px;padding:7px 12px;margin:12px 0 8px}
+.search svg{width:13px;height:13px;flex:none}
+.search input{border:0;outline:0;background:none;width:100%;font-size:12px}
+.search input::placeholder{color:var(--muted)}
+.search:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px #0075ff38}
+.vw-list{display:grid;gap:2px}
+.vw{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px;width:100%;border:1px solid transparent;background:none;border-radius:12px;padding:7px 8px;text-align:left}
+.vw:hover,.vw.sel{background:#ffffff0d;border-color:#0075ff66}
+.avatar{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 30%,#0f1535);border:1px solid var(--c);font-size:10px;font-weight:700}
+.vw b{display:block;font-size:12px}
+.vw small{font-size:11px;color:var(--muted)}
+.vw .late{font-size:11px;font-weight:700;color:var(--cyan);text-align:right;min-width:56px}
+.vw .late.warn{color:var(--amber)}
+.vw .late .bar{width:56px}
+.empty{font-size:12px;color:var(--muted);padding:8px}
+.foot{font-size:11px;color:var(--muted);padding:0 4px}
+
+.conn{display:inline-flex;align-items:center;gap:6px;margin-left:10px;padding:2px 9px;border-radius:9px;font-size:11px;font-weight:700;background:#01b57422;color:#5ee6a8;border:1px solid #01b57455;vertical-align:middle}
+.conn::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.conn.bad{background:#ff4d6d22;color:#ff8da1;border-color:#ff4d6d66}
+.mock{display:inline-block;margin-left:5px;padding:0 5px;border-radius:5px;font-size:9px;font-weight:800;letter-spacing:.04em;color:#ffd38a;background:#ffb5471f;border:1px solid #ffb54766;vertical-align:middle;line-height:15px}
+.lbl.edge-l.bad{border-color:#ff4d6d;box-shadow:0 0 14px #ff4d6d55}
+.lbl.edge-l.bad small{color:#ff8da1}
+.node-pick{background:#0f1535;border:1px solid #ffffff30;border-radius:8px;font-size:12px;padding:2px 6px;color:#fff}
+.p-link{font-size:11px;font-weight:700;color:var(--cyan);text-decoration:none}
+.p-link:hover{text-decoration:underline}
+.empty-scene{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);z-index:3;text-align:center;color:var(--muted);font-size:13px;pointer-events:none}
+@media(max-width:900px){
+  .mselbar{top:auto;bottom:12px;right:12px;left:12px;flex-wrap:wrap;white-space:normal}
+  body{overflow:auto}
+  .app{grid-template-columns:1fr;height:auto}
+  #scene{height:72vh;min-height:460px}
+  .side{border-left:0;border-top:1px solid var(--line);padding:16px}
+  .br{display:none}
+  .bl{left:12px;right:12px;bottom:12px;width:auto}
+  .tl{top:14px;left:16px;right:16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <section id="scene" aria-label="원본 서버와 중계 서버 연결 3D 화면">
+    <div class="hud tl">
+      <div class="brand"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 3h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm0 10h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm3-7.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>SFU Monitor<span class="conn bad" id="conn">연결 중</span></div>
+      <div class="hint">드래그 이동 · 오른쪽 드래그 회전 · 휠 확대 · 모니터를 끌어서 위치 변경<br>여러 명 선택: Shift+드래그 또는 범위 선택(V) · Shift/Ctrl+클릭 추가·제외 · Ctrl+A 전체 · Esc 해제</div>
+      <div class="tools">
+        <button class="tool" id="relayout">자동 배치</button>
+        <button class="tool" id="boxmode" aria-pressed="false">범위 선택<kbd>V</kbd></button>
+        <button class="tool" id="home">시점 초기화</button>
+      </div>
+    </div>
+    <div class="hud mselbar" id="msel" hidden><b id="msel-n">0</b>명 선택됨<span>· 끌어서 함께 이동</span><button class="tool" id="msel-layout">선택만 자동 배치</button><button class="tool" id="msel-clear">선택 해제 <kbd>Esc</kbd></button></div>
+    <div class="hud bl panel" id="detail" hidden></div>
+    <div class="hud br legend" id="legend"></div>
+    <div class="fallback" id="fallback" hidden>3D 화면을 불러오지 못했습니다.<br>WebGL을 지원하는 브라우저가 필요합니다. 오른쪽 목록과 그래프는 계속 갱신됩니다.</div>
+    <div class="empty-scene" id="empty-scene" hidden>아직 시청자가 없습니다. 시청자가 들어오면 origin → 중계 서버 → 시청자 순서로 나타납니다.</div>
+  </section>
+
+  <aside class="side">
+    <div class="panel">
+      <div class="p-head"><div><h3 id="node-title">노드</h3><div class="sub" id="node-sub"></div></div><span class="badge" id="node-badge" title="qdisc drop 값은 MOCK(예시)입니다">정상</span></div>
+      <div class="ts" id="node-ts" aria-label="Node CPU와 qdisc drop 시계열 그래프"></div>
+      <div class="list-head"><span class="list-label" title="아이콘을 눌러 그래프에 표시할 서버를 고릅니다. 아무것도 고르지 않으면 전체 표시">중계 서버 · 눌러서 골라 보기</span><button class="link" id="edge-all" hidden>전체 보기</button></div>
+      <div class="chips" id="edge-chips"></div>
+      <div class="ts" id="edge-ts" aria-label="중계 서버별 Worker CPU와 시청자 수 시계열 그래프" style="margin-bottom:0"></div>
+    </div>
+
+    <div class="panel">
+      <div class="p-head" style="margin-bottom:0"><div><h3>시청자</h3><div class="sub" id="count"></div></div></div>
+      <label class="search"><svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15zM16 16l5 5"/></svg><input id="search" placeholder="시청자 또는 서버 검색" aria-label="시청자 또는 서버 검색"></label>
+      <div class="vw-list" id="vw-list"></div>
+    </div>
+    <div class="foot">1초마다 갱신됩니다. <span class="mock">MOCK</span> 표시가 붙은 값(LATE 비율, qdisc drop, 배정 사유, 일부 시청자 이름·freeze)은 예시 값입니다. 목록과 기준은 docs/mock-data.md. 목록은 LATE 비율이 높은 순입니다. · <a class="p-link" href="/overview">기존 상세 화면 →</a></div>
+  </aside>
+</div>
+
+<script type="module">
+/* ================= data: origin 대시보드 /api/central (1초 실시간) ================= */
+const EDGE_COLORS=['#2cd9ff','#a78bfa','#3ee6a0','#ff6ad5','#ffd166','#5b8cff','#ff8a5b','#7cf29c'];
+const WARN_LATE=2; // LATE 경고 기준 (LATE 값이 MOCK이므로 이 기준도 예시)
+const LAYERS=['L0 (Low)','L1 (Mid)','L2 (High)'];
+const layerName=l=>l==null?'—':(LAYERS[l]??('L'+l));
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+const MOCK='<span class="mock" title="예시 값 (docs/mock-data.md)">MOCK</span>';
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let SNAP=null;
+try{SNAP=await (await fetch('/api/central/snapshot',{cache:'no-store'})).json()}catch(err){console.error(err)}
+if(!SNAP||!Array.isArray(SNAP.edges)){document.body.innerHTML='<div style="padding:40px;color:#a0aec0;font:14px sans-serif">origin 대시보드의 /api/central/snapshot에 연결할 수 없습니다. 이 화면은 origin 대시보드(MSDASH_MODE=origin)에서 엽니다. <a style="color:#2cd9ff" href="/overview">기존 화면으로 →</a></div>';throw new Error('no central snapshot')}
+const EDGES=SNAP.edges.map((e,i)=>({id:e.id,name:e.id,color:EDGE_COLORS[i%EDGE_COLORS.length],cpu:e.cpuPct,raw:e}));
+const edgeIndex=new Map(EDGES.map((e,i)=>[e.id,i]));
+const VIEWERS=[]; // 3D·목록이 함께 쓰는 배열. 순서 = 화면에 생긴 순서 (index로 참조)
+function viewerFrom(v){return {id:v.id,name:v.name,nameMock:v.nameMock,edge:edgeIndex.get(v.edgeId),roomId:v.roomId,late:v.latePct,lossPct:v.lossPct,rttMs:v.rttMs,layerNo:v.layer,
+  layer:layerName(v.layer),freezeCount:v.freezeCount,fps:v.fps,clientReported:v.clientReported,connectedAt:v.connectedAt,points:[v.latePct]}}
+for(const v of SNAP.viewers)if(edgeIndex.has(v.edgeId))VIEWERS.push(viewerFrom(v));
+const edgeCount=i=>VIEWERS.filter(v=>v.edge===i&&!v.joining).length; // 입장 애니메이션 중인 시청자는 도착 후 집계
+const nodeOfEdge=i=>EDGES[i].raw.nodeName??'(노드 정보 없음)';
+const fmtPct=v=>v==null?'—':(v<10?v.toFixed(1):Math.round(v))+'%';
+
+/* ================= side panel (DOM) ================= */
+let sel=null; // {kind:'edge'|'viewer'|'origin'|'sender', i}
+const multi=new Set(); // 범위 선택/Shift+클릭으로 고른 시청자들
+let syncMulti=()=>renderViewers(),toggleMulti=i=>{multi.has(i)?multi.delete(i):multi.add(i);syncMulti()},viewerLabelDown=()=>{};
+$('#legend').innerHTML=EDGES.map(e=>`<span><i style="--c:${e.color}"></i>${e.name}</span>`).join('')+'<span class="sep"></span><span><i style="--c:var(--amber)"></i>LATE 경고</span><span><i class="drop"></i>qdisc drop</span>';
+let edgeTSRender=()=>{};
+function renderServers(){edgeTSRender()}
+function renderViewers(){
+  const q=$('#search').value.trim().toLowerCase();
+  const m=VIEWERS.map((v,i)=>({...v,i})).filter(v=>!v.joining&&(v.name+' '+EDGES[v.edge].name).toLowerCase().includes(q)).sort((a,b)=>b.late-a.late);
+  const warnN=VIEWERS.filter(v=>!v.joining&&v.late>=WARN_LATE).length;
+  $('#count').innerHTML=`${VIEWERS.filter(v=>!v.joining).length}명 · LATE 경고 ${warnN}명${MOCK}`;
+  $('#vw-list').innerHTML=m.map(v=>{const w=v.late>=WARN_LATE,c=EDGES[v.edge].color;return `<button class="vw ${sel&&sel.kind==='viewer'&&sel.i===v.i?'sel':''} ${multi.has(v.i)?'msel':''}" data-i="${v.i}"><span class="avatar" style="--c:${c}">${esc(v.name.replace(/^viewer-/,'').slice(0,2).toUpperCase())}</span><span><b>${esc(v.name)}</b><small style="color:${c}">${esc(EDGES[v.edge].name)}</small><small> · ${v.layer}</small></span><span class="late ${w?'warn':''}">LATE ${v.late.toFixed(1)}%<span class="bar"><i class="${w?'warn':''}" style="--c:var(--cyan);width:${Math.min(v.late/3,1)*100}%"></i></span></span></button>`}).join('')||'<div class="empty">검색 결과가 없습니다.</div>';
+  $$('.vw').forEach(b=>b.onclick=e=>{if(e.shiftKey||e.ctrlKey||e.metaKey){toggleMulti(+b.dataset.i);return}if(multi.size){multi.clear();syncMulti()}select({kind:'viewer',i:+b.dataset.i})});
+}
+$('#search').oninput=renderViewers;
+
+function spark(points,color){
+  const W=380,H=70,p=points.map((n,j)=>[j*W/(points.length-1),H-4-Math.min(n,3)/3*(H-10)]);
+  let d=`M${p[0][0]} ${p[0][1]}`;for(let j=1;j<p.length;j++){const[x0,y0]=p[j-1],[x1,y1]=p[j],c=(x0+x1)/2;d+=` C${c} ${y0} ${c} ${y1} ${x1} ${y1}`}
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="LATE 비율 추이"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".45"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs><path d="${d} L${W} ${H} L0 ${H} Z" fill="url(#sg)"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" vector-effect="non-scaling-stroke"/></svg>`;
+}
+const metric=(k,v,bar,c)=>`<div class="metric"><span class="sub">${k}</span><strong>${v}</strong>${bar!=null?`<div class="bar"><i style="${c?`--c:${c};`:''}width:${bar}%"></i></div>`:''}</div>`;
+function renderDetail(){
+  const el=$('#detail');
+  if(!sel){el.hidden=true;return}
+  let h='';
+  const stateTxt=r=>r.state==='connected'?'<span class="badge">연결됨</span>':`<span class="badge warn">${r.state==='lost'?'신호 끊김':r.state==='stale'?'신호 지연':'주의'}</span>`;
+  if(sel.kind==='edge'){const e=EDGES[sel.i],r=e.raw,n=edgeCount(sel.i),w=VIEWERS.filter(v=>v.edge===sel.i&&v.late>=WARN_LATE).length;
+    h=`<div class="p-head"><div><h2><span class="chip" style="--c:${e.color}"></span>${esc(e.name)}</h2><div class="sub">중계 서버 · ${esc(nodeOfEdge(sel.i))}${r.reason?' · '+esc(r.reason):''}</div></div><button class="btn" data-close>닫기</button></div>
+    <div class="metrics">${metric('상태',stateTxt(r))}${metric('시청자 수',n+'명')}${metric('Worker CPU 합',fmtPct(r.cpuPct),r.cpuPct==null?null:Math.min(100,r.cpuPct),e.color)}${metric('LATE 경고 시청자',w+'명'+MOCK)}</div>
+    <div class="p-head" style="margin:8px 0 0"><span class="sub">수집 1회 ${r.collectMs??'—'}ms · 건너뛴 주기 ${r.skippedCycles??'—'}${r.liveSupported?'':' · 실시간 값 미지원(옛 버전)'}</span>${r.dashboardUrl?`<a class="p-link" href="${esc(r.dashboardUrl)}" target="_blank" rel="noopener">상세 대시보드 ↗</a>`:''}</div>`;
+  }else if(sel.kind==='viewer'){const v=VIEWERS[sel.i],e=EDGES[v.edge];
+    const freeze=v.freezeCount==null?'—':v.freezeCount+'회'+(v.clientReported?'':MOCK);
+    h=`<div class="p-head"><div><h2>${esc(v.name)}${v.nameMock?MOCK:''}</h2><div class="sub">방송 ${esc(v.roomId||'—')} · <span style="color:${e.color}">${esc(e.name)}</span></div></div><button class="btn" data-close>닫기</button></div>
+    <div class="p-head" style="margin-bottom:0"><strong style="font-size:13px;color:${v.late>=WARN_LATE?'var(--amber)':'inherit'}">LATE 비율 ${v.late.toFixed(1)}%${MOCK}</strong><span class="sub">최근 ${v.points.length}초</span></div>${spark(v.points.length>1?v.points:[v.late,v.late],v.late>=WARN_LATE?'#ffb547':e.color)}
+    <div class="metrics">${metric('수신 레이어',v.layer)}${metric('Loss (최근 5초)',v.lossPct==null?'—':v.lossPct.toFixed(1)+'%')}${metric('RTT',v.rttMs==null?'—':v.rttMs+' ms')}${metric('Freeze',freeze)}</div>`;
+  }else if(sel.kind==='origin'){const o=SNAP.origin;
+    h=`<div class="p-head"><div><h2>${esc(o.id)}</h2><div class="sub">원본 서버${o.nodeName?' · '+esc(o.nodeName):''}</div></div><button class="btn" data-close>닫기</button></div>
+    <div class="metrics">${metric('상태',o.collectorOk?'<span class="badge">정상 동작</span>':'<span class="badge warn">수집 실패</span>')}${metric('연결된 중계 서버',EDGES.filter(e=>e.raw.state!=='lost').length+' / '+EDGES.length+'대')}${metric('송출자',o.broadcasters.sending+'명')}${metric('전체 시청자',VIEWERS.filter(v=>!v.joining).length+'명')}</div>
+    <div class="p-head" style="margin:8px 0 0"><span class="sub">방송 ${o.rooms}개</span><a class="p-link" href="/overview">기존 상세 화면 →</a></div>`;
+  }else{const b=SNAP.origin.broadcasters;
+    h=`<div class="p-head"><div><h2>송출자</h2><div class="sub">${esc(SNAP.origin.id)}로 송출</div></div><button class="btn" data-close>닫기</button></div>
+    <div class="metrics">${metric('송출 중',b.sending+'명')}${metric('대기 (송출 없음)',b.idle+'명')}</div>`;
+  }
+  el.innerHTML=h;el.hidden=false;
+  el.querySelector('[data-close]').onclick=()=>select(null);
+}
+/* 3D 선택 ↔ 그래프 서버 필터 연동: 선택이 바뀔 때만 필터를 맞춤 */
+let lastSelKey='none',filterFromSel=false;
+function syncFilterWithSel(){
+  const key=sel?sel.kind+(sel.i??''):'none';if(key===lastSelKey)return;lastSelKey=key;
+  if(typeof edgeFilter==='undefined')return;
+  const ei=sel&&sel.kind==='edge'?sel.i:sel&&sel.kind==='viewer'?VIEWERS[sel.i].edge:null;
+  if(ei!=null){edgeFilter.clear();edgeFilter.add(ei);filterFromSel=true}       // 서버/시청자 선택 → 해당 서버만 표시
+  else if(filterFromSel){edgeFilter.clear();filterFromSel=false}               // 선택 해제 → 전체 표시
+}
+function refreshPanels(){syncFilterWithSel();renderServers();renderViewers();renderDetail()}
+refreshPanels();
+
+/* ================= 시계열: origin 메모리의 최근 30분 (30초 간격, 마지막 칸은 지금 구간) ================= */
+const TS_N=SNAP.history.points,TS_STEP=SNAP.history.stepSec;
+const NODE_TS={cpu:[],drop:[]};
+let nodeSel=null; // 그래프에 보여 줄 노드 이름
+function pickNode(){const ns=SNAP.nodes;if(!ns.length)return null;if(nodeSel&&ns.some(n=>n.name===nodeSel))return nodeSel;
+  return (ns.find(n=>n.edgeIds.length&&n.hasOrigin)??ns.find(n=>n.edgeIds.length)??ns[0]).name}
+function loadNodeTS(){nodeSel=pickNode();const h=nodeSel&&SNAP.history.nodes[nodeSel];NODE_TS.cpu=h?h.cpu.slice():Array(TS_N).fill(null);NODE_TS.drop=h?h.drop.slice():Array(TS_N).fill(null)}
+loadNodeTS();
+/* null(그 구간 기록 없음)은 선을 끊는다 */
+function linePath(a,x,y,step){let d='',pen=false;
+  a.forEach((v,i)=>{if(v==null){pen=false;return}
+    if(!pen){d+=`M${x(i).toFixed(1)} ${y(v).toFixed(1)}`;pen=true}else d+=step?`H${x(i).toFixed(1)}V${y(v).toFixed(1)}`:`L${x(i).toFixed(1)} ${y(v).toFixed(1)}`});return d}
+const lastNum=a=>{for(let i=a.length-1;i>=0;i--)if(a[i]!=null)return a[i];return null};
+const TS_DEF=[
+  {key:'cpu',name:'Node CPU',unit:'%',color:'#3d8bff',max:()=>100,fmt:v=>Math.round(v)},
+  {key:'drop',name:'qdisc drop'+MOCK,unit:'/s',color:'#ffb547',max:a=>Math.max(5,Math.ceil(Math.max(0,...a.filter(v=>v!=null))/5)*5),fmt:v=>v<10?v.toFixed(1):Math.round(v),warn:true}
+];
+let tsHover=null;
+function agoLabel(k){const s=(TS_N-1-k)*TS_STEP;return s===0?'현재':s<60?s+'초 전':Math.floor(s/60)+'분'+(s%60?' 30초':'')+' 전'}
+function renderNodeTS(){
+  const W=300,H=62,el=$('#node-ts'),k=tsHover??TS_N-1;
+  el.innerHTML=TS_DEF.map(d=>{
+    const a=NODE_TS[d.key],max=d.max(a),y=v=>H-3-(v/max)*(H-8),x=i=>i/(TS_N-1)*W;
+    const line=linePath(a,x,y,false),first=a.findIndex(v=>v!=null),lastI=a.length-1-[...a].reverse().findIndex(v=>v!=null);
+    const warn=d.warn&&a[k]>0,val=a[k];
+    return `<div class="ts-c ${warn?'warn':''}" style="--c:${d.color}">
+      <div class="ts-h"><span class="sub">${d.name}</span><span class="ts-v">${val==null?'—':d.fmt(val)}<small>${val==null?'':d.unit}</small></span></div>
+      <div class="ts-plot">
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><linearGradient id="tg-${d.key}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${d.color}" stop-opacity=".35"/><stop offset="1" stop-color="${d.color}" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0 ${y(max/2)}H${W}M0 ${y(max)}H${W}" stroke="#ffffff14" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>
+          <path d="M0 ${y(0)}H${W}" stroke="#ffffff22" vector-effect="non-scaling-stroke"/>
+          ${first>=0&&line?`<path d="${line} L${x(lastI).toFixed(1)} ${H} L${x(first).toFixed(1)} ${H} Z" fill="url(#tg-${d.key})"/>`:''}
+          <path d="${line}" fill="none" stroke="${d.color}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>
+        <span class="ts-y" style="top:${y(max)-4}px">${max}${d.unit}</span>
+        <span class="ts-cross" style="left:${k/(TS_N-1)*100}%"></span>
+        ${val==null?'':`<span class="ts-dot" style="left:${k/(TS_N-1)*100}%;top:${y(val)/H*100}%"></span>`}
+      </div></div>`;
+  }).join('')+`<div class="ts-x"><span>30분 전</span><span>${tsHover!=null?'<b>'+agoLabel(k)+'</b>':'15분 전'}</span><span>현재</span></div>`;
+  const drop=lastNum(NODE_TS.drop)??0,b=$('#node-badge');b.textContent=drop>0?'주의':'정상';b.classList.toggle('warn',drop>0);
+  const ns=SNAP.nodes,cur=ns.find(n=>n.name===nodeSel);
+  $('#node-title').innerHTML=ns.length>1?`<select class="node-pick" id="node-pick" aria-label="그래프에 표시할 노드">${ns.map(n=>`<option ${n.name===nodeSel?'selected':''}>${esc(n.name)}</option>`).join('')}</select>`:esc(nodeSel??'노드');
+  $('#node-sub').textContent=cur?`중계 서버 ${cur.edgeIds.length}대 실행 중${cur.hasOrigin?' · origin 포함':''}${ns.length>1?` · 노드 ${ns.length}개`:''}${cur.ready===false?' · NotReady':''}`:'노드 정보 없음';
+  const np=$('#node-pick');if(np)np.onchange=()=>{nodeSel=np.value;loadNodeTS();renderNodeTS()};
+}
+// 두 그래프의 시간축을 맞춰, 마우스를 올린 시각의 두 값을 함께 표시
+/* 중계 서버별 시계열: Worker CPU 합, 시청자 수 (서버마다 선 색이 다름) */
+const EDGE_TS=EDGES.map(()=>({cpu:[],vw:[]}));
+function loadEdgeTS(){EDGES.forEach((e,i)=>{const h=SNAP.history.edges[e.id];EDGE_TS[i].cpu=h?h.cpu.slice():Array(TS_N).fill(null);EDGE_TS[i].vw=h?h.viewers.slice():Array(TS_N).fill(null)})}
+loadEdgeTS();
+const edgeFilter=new Set(); // 비어 있으면 전체 표시
+const SERVER_IC='<svg viewBox="0 0 24 24"><path fill="currentColor" d="M4 3h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm0 10h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zm3-7.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0 10a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/></svg>';
+function multiChart(title,unit,key,max,step){
+  const W=300,H=70,k=tsHover??TS_N-1,show=EDGES.map((_,i)=>!edgeFilter.size||edgeFilter.has(i));
+  const y=v=>H-3-(v/max)*(H-8),x=i=>i/(TS_N-1)*W;
+  const path=a=>linePath(a,x,y,step);
+  const lines=EDGES.map((e,i)=>show[i]?`<path d="${path(EDGE_TS[i][key])}" fill="none" stroke="${e.color}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`:'').join('');
+  const dots=EDGES.map((e,i)=>show[i]&&EDGE_TS[i][key][k]!=null?`<span class="ts-dot" style="--c:${e.color};left:${k/(TS_N-1)*100}%;top:${y(EDGE_TS[i][key][k])/H*100}%"></span>`:'').join('');
+  const vis=EDGES.map((_,i)=>i).filter(i=>show[i]&&EDGE_TS[i][key][k]!=null),sum=vis.reduce((a,i)=>a+EDGE_TS[i][key][k],0);
+  const val=!vis.length?'—':key==='cpu'?(vis.length===1?Math.round(sum)+'<small>%</small>':'평균 '+Math.round(sum/vis.length)+'<small>%</small>'):(vis.length===1?sum+'<small>명</small>':'합계 '+sum+'<small>명</small>');
+  return `<div class="ts-c"><div class="ts-h"><span class="sub">${title}</span><span class="ts-v">${val}</span></div>
+    <div class="ts-plot"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:${H}px">
+      <path d="M0 ${y(max/2)}H${W}M0 ${y(max)}H${W}" stroke="#ffffff14" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/><path d="M0 ${y(0)}H${W}" stroke="#ffffff22" vector-effect="non-scaling-stroke"/>${lines}</svg>
+      <span class="ts-y" style="top:${y(max)-4}px">${max}${unit}</span><span class="ts-cross" style="left:${k/(TS_N-1)*100}%"></span>${dots}</div></div>`;
+}
+function renderEdgeTS(){
+  EDGES.forEach((_,i)=>{EDGE_TS[i].vw[TS_N-1]=edgeCount(i)}); // 현재 시청자 수는 화면 목록과 맞춤 (입장 애니메이션 중인 시청자 제외)
+  const k=tsHover??TS_N-1;
+  $('#edge-chips').classList.toggle('filtered',edgeFilter.size>0);
+  $('#edge-all').hidden=!edgeFilter.size;
+  $('#edge-chips').innerHTML=EDGES.map((e,i)=>`<button class="chip-e ${edgeFilter.has(i)?'on':''}" style="--c:${e.color}" data-i="${i}" aria-pressed="${edgeFilter.has(i)}" title="${esc(e.name)}만 그래프에 표시 (다시 누르면 해제)"><span class="ic">${SERVER_IC}</span><span><b>${esc(e.name)}</b><small>CPU ${EDGE_TS[i].cpu[k]==null?'—':Math.round(EDGE_TS[i].cpu[k])+'%'} · ${EDGE_TS[i].vw[k]??'—'}명</small></span></button>`).join('');
+  $$('.chip-e').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;edgeFilter.has(i)?edgeFilter.delete(i):edgeFilter.add(i);filterFromSel=false;
+    if(edgeFilter.size===1){const only=[...edgeFilter][0];if(!(sel&&sel.kind==='edge'&&sel.i===only)){select({kind:'edge',i:only});return}} // 하나만 고르면 3D에서도 그 서버 선택
+    else if(sel&&sel.kind==='edge'){select(null);return}                                                                                   // 0개·여러 개면 3D 서버 선택 해제
+    renderEdgeTS()});
+  const vmax=Math.max(2,...EDGE_TS.flatMap(t=>t.vw).filter(v=>v!=null));
+  const cmax=Math.max(100,Math.ceil(Math.max(0,...EDGE_TS.flatMap(t=>t.cpu).filter(v=>v!=null))/50)*50); // worker 여러 개면 100%를 넘는다
+  $('#edge-ts').innerHTML=multiChart('Worker CPU 합','%','cpu',cmax,false)+multiChart('시청자 수','명','vw',Math.ceil(vmax*1.2),true)
+    +`<div class="ts-x"><span>30분 전</span><span>${tsHover!=null?'<b>'+agoLabel(k)+'</b>':'15분 전'}</span><span>현재</span></div>`;
+}
+edgeTSRender=renderEdgeTS;
+$('#edge-all').onclick=()=>{edgeFilter.clear();filterFromSel=false;if(sel&&(sel.kind==='edge'||sel.kind==='viewer'))select(null);else renderEdgeTS()};
+// 노드/중계 서버 그래프 4개가 같은 시간축을 공유: 어느 그래프에 마우스를 올려도 같은 시각을 표시
+const renderAllTS=()=>{renderNodeTS();renderEdgeTS()};
+['#node-ts','#edge-ts'].forEach(id=>{
+  $(id).addEventListener('pointermove',e=>{const plot=$(id+' .ts-plot');if(!plot)return;const r=plot.getBoundingClientRect();
+    const k=Math.round(Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))*(TS_N-1));if(k!==tsHover){tsHover=k;renderAllTS()}});
+  $(id).addEventListener('pointerleave',()=>{tsHover=null;renderAllTS()});
+});
+renderAllTS();
+/* ================= 실시간 스트림 (SSE, 1초) ================= */
+// 3D가 준비되면 아래 두 훅을 3D 버전으로 바꾼다. 3D를 못 띄워도 목록·그래프는 갱신된다.
+let joinViewers=list=>{for(const v of list)VIEWERS.push(v)};
+let leaveViewers=idx=>{idx.sort((a,b)=>b-a).forEach(i=>{VIEWERS.splice(i,1);if(sel&&sel.kind==='viewer'){if(sel.i===i)sel=null;else if(sel.i>i)sel.i--}});const m=[...multi];multi.clear();m.forEach(k=>{const d=idx.filter(i=>i<k).length;if(!idx.includes(k))multi.add(k-d)})};
+let onEdgesUpdated=()=>{},onViewersUpdated=()=>{};
+/* 마우스가 올라가 있는 동안 다시 그리면 클릭이 씹힌다 → 벗어난 뒤 그린다 */
+function calmRender(el,fn){if(el&&el.matches(':hover')){if(!el._dirty){el._dirty=true;el.addEventListener('pointerleave',()=>{el._dirty=false;fn()},{once:true})}return}fn()}
+function applySnapshot(next){
+  const ids=next.edges.map(e=>e.id).join('|');
+  if(ids!==EDGES.map(e=>e.id).join('|')){location.reload();return} // 중계 서버가 늘거나 줄면 장면을 다시 만든다
+  SNAP=next;
+  next.edges.forEach((e,i)=>{EDGES[i].raw=e;EDGES[i].cpu=e.cpuPct});
+  const incoming=new Map(next.viewers.filter(v=>edgeIndex.has(v.edgeId)).map(v=>[v.id,v]));
+  const gone=[];VIEWERS.forEach((v,i)=>{const n=incoming.get(v.id);
+    if(!n||edgeIndex.get(n.edgeId)!==v.edge){gone.push(i);return}
+    Object.assign(v,{name:n.name,nameMock:n.nameMock,late:n.latePct,lossPct:n.lossPct,rttMs:n.rttMs,layerNo:n.layer,layer:layerName(n.layer),freezeCount:n.freezeCount,fps:n.fps,clientReported:n.clientReported});
+    v.points.push(n.latePct);if(v.points.length>60)v.points.shift();incoming.delete(v.id)});
+  if(gone.length)leaveViewers(gone);
+  if(incoming.size)joinViewers([...incoming.values()].map(viewerFrom));
+  loadNodeTS();loadEdgeTS();
+  renderNodeTS();calmRender($('#edge-chips'),renderEdgeTS);
+  onEdgesUpdated();onViewersUpdated();
+  syncFilterWithSel();calmRender($('#vw-list'),renderViewers);calmRender($('#detail'),renderDetail);
+}
+function connect(){
+  const es=new EventSource('/api/central/stream'),conn=$('#conn');let lastAt=0;
+  es.onmessage=ev=>{lastAt=Date.now();conn.textContent='실시간 · 1초';conn.classList.remove('bad');try{applySnapshot(JSON.parse(ev.data))}catch(err){console.error(err)}};
+  es.onerror=()=>{conn.textContent='연결 끊김 · 재연결 중';conn.classList.add('bad')};
+  setInterval(()=>{if(lastAt&&Date.now()-lastAt>5000){conn.textContent=`${Math.round((Date.now()-lastAt)/1000)}초 동안 갱신 없음`;conn.classList.add('bad')}},1000);
+}
+
+/* ================= 3D ================= */
+let select=s=>{sel=s;refreshPanels()}; // 3D가 준비되면 교체됨
+try{
+  const THREE=await import('three');
+  const {OrbitControls}=await import('three/addons/controls/OrbitControls.js');
+  const {CSS2DRenderer,CSS2DObject}=await import('three/addons/renderers/CSS2DRenderer.js');
+  const {EffectComposer}=await import('three/addons/postprocessing/EffectComposer.js');
+  const {RenderPass}=await import('three/addons/postprocessing/RenderPass.js');
+  const {UnrealBloomPass}=await import('three/addons/postprocessing/UnrealBloomPass.js');
+  const {OutputPass}=await import('three/addons/postprocessing/OutputPass.js');
+  const {RoundedBoxGeometry}=await import('three/addons/geometries/RoundedBoxGeometry.js');
+  const {RoomEnvironment}=await import('three/addons/environments/RoomEnvironment.js');
+  init3D({THREE,OrbitControls,CSS2DRenderer,CSS2DObject,EffectComposer,RenderPass,UnrealBloomPass,OutputPass,RoundedBoxGeometry,RoomEnvironment});
+}catch(err){console.error(err);$('#fallback').hidden=false}
+connect();
+
+function init3D({THREE,OrbitControls,CSS2DRenderer,CSS2DObject,EffectComposer,RenderPass,UnrealBloomPass,OutputPass,RoundedBoxGeometry,RoomEnvironment}){
+  const wrap=$('#scene');
+  const renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  wrap.prepend(renderer.domElement);
+  const labelR=new CSS2DRenderer();labelR.domElement.className='labels';
+  renderer.domElement.after(labelR.domElement);
+  const stage=labelR.domElement;
+
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x050a24);scene.fog=new THREE.FogExp2(0x050a24,.016);
+  const camera=new THREE.PerspectiveCamera(40,1,.1,300);
+  const HOME=new THREE.Vector3(.5,.6,.4),VIEW_DIR=new THREE.Vector3(-.28,.52,.81).normalize();
+  camera.position.copy(HOME).addScaledVector(VIEW_DIR,26);
+  const controls=new OrbitControls(camera,stage);
+  controls.target.copy(HOME);controls.enableDamping=true;controls.dampingFactor=.08;
+  controls.maxPolarAngle=Math.PI*.46;controls.minDistance=5;controls.maxDistance=60;
+  controls.enablePan=true;controls.screenSpacePanning=false;controls.panSpeed=1.1;
+  // 지도형 조작: 왼쪽 드래그 = 이동, 오른쪽 드래그 = 회전, 휠 = 확대 (터치: 한 손가락 이동, 두 손가락 확대·회전)
+  controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};
+  controls.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_ROTATE};
+  controls.listenToKeyEvents(window); // 방향키로도 이동
+
+  const composer=new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene,camera));
+  const bloom=new UnrealBloomPass(new THREE.Vector2(1,1),.8,.55,.22);
+  composer.addPass(bloom);composer.addPass(new OutputPass());
+
+  scene.add(new THREE.HemisphereLight(0x7d9bff,0x050816,.9));
+  const key=new THREE.DirectionalLight(0xffffff,1.6);key.position.set(-6,14,10);key.castShadow=true;key.shadow.mapSize.set(2048,2048);Object.assign(key.shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:1,far:60});key.shadow.bias=-.0004;key.shadow.normalBias=.02;scene.add(key);
+  {const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(renderer),.04).texture;pm.dispose()}
+  const rim=new THREE.PointLight(0x2cd9ff,30,18);rim.position.set(3.5,4,0);scene.add(rim);
+
+  /* ---------- textures (canvas로 생성) ---------- */
+  function canvasTex(w,h,draw,{srgb=true}={}){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);if(srgb)t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t}
+  const glowTex=canvasTex(64,64,g=>{const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'#fff');r.addColorStop(.25,'rgba(255,255,255,.75)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,64,64)},{srgb:false});
+  const screenTex=canvasTex(512,280,(g,w,h)=>{const lg=g.createLinearGradient(0,0,w,h);lg.addColorStop(0,'#13306e');lg.addColorStop(1,'#0a1440');g.fillStyle=lg;g.fillRect(0,0,w,h);
+    g.fillStyle='#2a3f7a';g.beginPath();g.arc(w*.62,h*.46,46,0,7);g.fill();g.beginPath();g.ellipse(w*.62,h*.98,96,80,0,Math.PI,0);g.fill();
+    g.fillStyle='#ff4d6d';g.beginPath();g.arc(38,36,10,0,7);g.fill();g.fillStyle='#fff';g.font='bold 26px "Segoe UI",sans-serif';g.fillText('LIVE',56,46);
+    g.font='bold 40px "Malgun Gothic",sans-serif';g.fillText('송출 중',30,h-58);g.fillStyle='#2cd9ff';g.fillRect(30,h-38,200,5);
+    g.fillStyle='#ffffff22';g.fillRect(0,h-14,w,14);g.fillStyle='#ff4d6d';g.fillRect(0,h-14,w*.7,14)});
+  const videoTex=canvasTex(320,180,(g,w,h)=>{const lg=g.createLinearGradient(0,0,w,h);lg.addColorStop(0,'#2b4a9a');lg.addColorStop(1,'#141d4a');g.fillStyle=lg;g.fillRect(0,0,w,h);
+    g.fillStyle='#ffffff14';g.fillRect(w*.08,h*.18,w*.3,h*.5);
+    g.fillStyle='#c9d6ff';g.beginPath();g.arc(w*.58,h*.42,24,0,7);g.fill();g.beginPath();g.ellipse(w*.58,h*1.02,54,52,0,Math.PI,0);g.fill();
+    g.fillStyle='#ff4d6d';g.beginPath();g.arc(18,18,6,0,7);g.fill();g.fillStyle='#fff';g.font='bold 15px "Segoe UI",sans-serif';g.fillText('LIVE',30,23);
+    g.fillStyle='#00000066';g.fillRect(0,h-16,w,16);g.fillStyle='#ffffffaa';g.fillRect(8,h-9,w*.62,3)});
+  const perfTex=canvasTex(32,32,g=>{g.fillStyle='#fff';g.fillRect(0,0,32,32);g.fillStyle='#000';g.beginPath();g.arc(16,16,12,0,7);g.fill()},{srgb:false});
+  perfTex.wrapS=perfTex.wrapT=THREE.RepeatWrapping;
+  const plateTex=canvasTex(512,96,(g,w,h)=>{g.fillStyle='#2a303c';g.fillRect(0,0,w,h);
+    g.fillStyle='#161a22';for(let i=0;i<9;i++)for(let j=0;j<3;j++)g.fillRect(18+i*10,16+j*24,5,16);
+    for(let i=0;i<8;i++){const x=126+i*45;g.fillStyle='#14181f';g.fillRect(x,9,39,78);g.fillStyle='#454e60';g.fillRect(x+4,13,31,9);g.fillStyle='#262c37';for(let k=0;k<5;k++)g.fillRect(x+6,30+k*10,27,4)}
+    g.fillStyle='#363e4e';g.fillRect(0,0,10,h);g.fillRect(w-10,0,10,h);g.strokeStyle='#424b5e';g.lineWidth=2;g.strokeRect(1,1,w-2,h-2)});
+  const kbTex=canvasTex(256,80,(g,w,h)=>{g.fillStyle='#151922';g.fillRect(0,0,w,h);g.fillStyle='#2b3140';for(let r=0;r<5;r++)for(let c=0;c<15;c++)g.fillRect(6+c*16.5,6+r*14.5,13,11)});
+  const tileTex=canvasTex(128,128,(g,w,h)=>{g.fillStyle='#101833';g.fillRect(0,0,w,h);g.strokeStyle='#22346e';g.lineWidth=3;g.strokeRect(2,2,w-4,h-4);g.fillStyle='#16224a';for(let i=0;i<6;i++)for(let j=0;j<6;j++)g.fillRect(20+i*16,20+j*16,6,6)});
+  tileTex.wrapS=tileTex.wrapT=THREE.RepeatWrapping;tileTex.repeat.set(3,Math.max(6,Math.round((EDGES.length*3.1+3.2)))); 
+  function nameTex(name,accent){return canvasTex(256,48,(g,w,h)=>{g.fillStyle='#0b0f17';g.fillRect(0,0,w,h);g.fillStyle='#'+new THREE.Color(accent).getHexString();g.fillRect(0,0,7,h);g.fillStyle='#fff';g.font='bold 24px "Segoe UI",sans-serif';g.fillText(name,20,32);g.fillStyle='#7d8aa5';g.font='bold 14px "Segoe UI",sans-serif';g.fillText('SFU',w-44,30)})}
+
+  /* ---------- floor ---------- */
+  const floor=new THREE.Mesh(new THREE.PlaneGeometry(140,140),new THREE.MeshStandardMaterial({color:0x060b22,metalness:.3,roughness:.55,envMapIntensity:.4}));
+  floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+  const grid=new THREE.GridHelper(120,120,0x1d4ed8,0x0d1d55);grid.material.transparent=true;grid.material.opacity=.2;grid.position.y=.004;scene.add(grid);
+  const floorGlow=new THREE.Mesh(new THREE.PlaneGeometry(40,26),new THREE.MeshBasicMaterial({map:glowTex,color:0x0b45d1,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false}));
+  floorGlow.rotation.x=-Math.PI/2;floorGlow.position.set(2,.01,0);scene.add(floorGlow);
+
+  const std=(c,o={})=>new THREE.MeshStandardMaterial({color:c,metalness:.6,roughness:.42,envMapIntensity:.45,...o});
+  const RB=(w,h,d,r=.02,s=3)=>new RoundedBoxGeometry(w,h,d,s,Math.min(r,w/2-.001,h/2-.001,d/2-.001));
+  const shadows=g=>g.traverse(o=>{if(o.isMesh&&!(o.material&&o.material.isMeshBasicMaterial)){o.castShadow=true;o.receiveShadow=true}});
+  const pickables=[],labels={},blinkers=[];
+  let dragJustEnded=false;
+  function label(html,cls,pos,parent,pick,style){
+    const d=document.createElement('div');d.className='lbl '+(cls||'');d.innerHTML=html;if(style)d.setAttribute('style',style);
+    if(pick)d.onclick=e=>{e.stopPropagation();if(dragJustEnded||e.shiftKey||e.ctrlKey||e.metaKey)return;if(multi.size){multi.clear();syncMulti()}select(pick)};
+    d.addEventListener('pointerdown',e=>{e.stopPropagation();if(pick&&pick.kind==='viewer')viewerLabelDown(pick.i,e)});
+    const o=new CSS2DObject(d);o.position.copy(pos);parent.add(o);d._obj=o;return d;
+  }
+
+  /* ---------- server rack: 메시 도어 안으로 서버 유닛과 LED가 보이는 캐비닛 ---------- */
+  const ledGeo=new THREE.SphereGeometry(.021,10,8);
+  function rack({w=1.3,h=2.5,d=1.15,accent=0x2f7bff,units=6,cpu=null,name=''}){
+    const g=new THREE.Group(),lift=.07,top=lift+h,fz=d/2;
+    const body=new THREE.Mesh(RB(w,h,d,.05,4),std(0x1b2130,{metalness:.55,roughness:.48}));body.position.y=lift+h/2;g.add(body);
+    for(const sx of[-1,1])for(const sz of[-1,1]){const f=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,lift,14),std(0x0b0e14));f.position.set(sx*(w/2-.13),lift/2,sz*(d/2-.13));g.add(f)}
+    const dw=w*.84,dh=h*.82,dy=lift+h*.465,uh=dh/units,fb=.05;
+    for(let i=0;i<units;i++){
+      const y=dy-dh/2+uh*i+uh/2;
+      const u=new THREE.Mesh(RB(dw*.95,uh*.86,.06,.01,2),std(0x232a37));u.position.set(0,y,fz+.03);g.add(u);
+      const plate=new THREE.Mesh(new THREE.PlaneGeometry(dw*.93,uh*.8),new THREE.MeshStandardMaterial({map:plateTex,metalness:.45,roughness:.5,envMapIntensity:.4}));plate.position.set(0,y,fz+.0615);g.add(plate);
+      [[0x22e3a0,.022],[0x3d8bff,-.022]].forEach(([col,oy])=>{const led=new THREE.Mesh(ledGeo,new THREE.MeshBasicMaterial({color:col}));led.position.set(dw*.43,y+oy,fz+.07);g.add(led);blinkers.push({m:led.material,base:new THREE.Color(col),ph:Math.random()*10,sp:2+Math.random()*7})});
+    }
+    const pt=perfTex.clone();pt.needsUpdate=true;pt.repeat.set(dw/.05,dh/.05);
+    const door=new THREE.Mesh(new THREE.PlaneGeometry(dw,dh),new THREE.MeshStandardMaterial({color:0x121722,metalness:.7,roughness:.4,envMapIntensity:.5,alphaMap:pt,alphaTest:.5,side:THREE.DoubleSide}));
+    door.position.set(0,dy,fz+.095);g.add(door);
+    const fm=std(0x171c27);
+    [[dw+fb*2,fb,0,dh/2+fb/2],[dw+fb*2,fb,0,-dh/2-fb/2],[fb,dh,-dw/2-fb/2,0],[fb,dh,dw/2+fb/2,0]].forEach(([bw,bh,x,y])=>{const b=new THREE.Mesh(RB(bw,bh,.1,.012,2),fm);b.position.set(x,dy+y,fz+.05);g.add(b)});
+    const handle=new THREE.Mesh(RB(.035,.34,.045,.014,2),std(0x9aa3b5,{metalness:.95,roughness:.22}));handle.position.set(dw/2-.07,dy,fz+.125);g.add(handle);
+    const vent=new THREE.Mesh(RB(w*.7,.02,d*.7,.008,2),std(0x0e121a));vent.position.set(0,top+.005,0);g.add(vent);
+    if(name){const pw=w*.6,np=new THREE.Mesh(new THREE.PlaneGeometry(pw,pw*48/256),new THREE.MeshBasicMaterial({map:nameTex(name,accent),color:0x8d96aa}));np.position.set(-w*.12,(top+dy+dh/2+fb)/2,fz+.003);g.add(np)}
+    if(cpu!=null){ // CPU 사용률: 도어 왼쪽 프레임의 세로 라이트
+      const bg=new THREE.Mesh(new THREE.BoxGeometry(.016,dh*.96,.004),new THREE.MeshBasicMaterial({color:0x1b2347}));bg.position.set(-dw/2-fb/2,dy,fz+.102);g.add(bg);
+      const fh=dh*.96*cpu/100,fill=new THREE.Mesh(new THREE.BoxGeometry(.018,fh,.006),new THREE.MeshBasicMaterial({color:accent}));fill.position.set(-dw/2-fb/2,dy-dh*.48+fh/2,fz+.104);g.add(fill);
+    }
+    const strip=new THREE.Mesh(new THREE.BoxGeometry(w*.9,.016,.016),new THREE.MeshBasicMaterial({color:accent,transparent:true,opacity:.85}));strip.position.set(0,top-.025,fz+.004);g.add(strip);
+    shadows(g);
+    g.userData={body,edge:strip,edgeOp:.85};return g;
+  }
+
+  /* ---------- monitor ---------- */
+  const MON={
+    housing:RB(.94,.58,.035,.012),back:RB(.5,.32,.07,.03),disp:new THREE.PlaneGeometry(.9,.515),
+    arm:RB(.05,.6,.035,.012,2),base:new THREE.CylinderGeometry(.2,.22,.025,40),bar:new THREE.BoxGeometry(.42,.012,.008),
+    ring:new THREE.RingGeometry(.3,.34,40),selRing:new THREE.RingGeometry(.44,.5,48),glow:new THREE.PlaneGeometry(1.2,1.2)
+  };
+  const darkMat=std(0x0f1218,{metalness:.4,roughness:.38}),standMat=std(0x2a303c,{metalness:.85,roughness:.28});
+  const dispMats=EDGES.map(e=>new THREE.MeshBasicMaterial({map:videoTex,color:new THREE.Color('#ffffff').lerp(new THREE.Color(e.color),.3).multiplyScalar(.72)}));
+  function viewerDev(v){
+    const g=new THREE.Group(),col=new THREE.Color(EDGES[v.edge].color),warn=v.late>=WARN_LATE;
+    const housing=new THREE.Mesh(MON.housing,std(0x111419,{metalness:.35,roughness:.4}));housing.position.y=.86;g.add(housing);
+    const back=new THREE.Mesh(MON.back,darkMat);back.position.set(0,.86,-.04);g.add(back);
+    const disp=new THREE.Mesh(MON.disp,dispMats[v.edge]);disp.position.set(0,.872,.0185);g.add(disp);
+    const bar=new THREE.Mesh(MON.bar,new THREE.MeshBasicMaterial({color:warn?0xffb547:col,transparent:true,opacity:.9}));bar.position.set(0,.594,.019);g.add(bar);
+    const arm=new THREE.Mesh(MON.arm,standMat);arm.position.set(0,.32,-.07);g.add(arm);
+    const base=new THREE.Mesh(MON.base,standMat);base.scale.z=.75;base.position.set(0,.0125,-.05);g.add(base);
+    const ring=new THREE.Mesh(MON.ring,new THREE.MeshBasicMaterial({color:warn?0xffb547:col,transparent:true,opacity:.75,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.006;g.add(ring);
+    const glow=new THREE.Mesh(MON.glow,new THREE.MeshBasicMaterial({map:glowTex,color:col,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false}));glow.rotation.x=-Math.PI/2;glow.position.y=.008;g.add(glow);
+    const selRing=new THREE.Mesh(MON.selRing,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9,side:THREE.DoubleSide}));selRing.rotation.x=-Math.PI/2;selRing.position.y=.012;selRing.visible=false;g.add(selRing);
+    shadows(g);g.rotation.y=-.3;
+    g.userData={body:housing,edge:bar,edgeOp:.9,selRing,ring};return g;
+  }
+
+  /* ---------- sender desk ---------- */
+  function sender(){
+    const g=new THREE.Group(),deskY=.76;
+    const top=new THREE.Mesh(RB(3.4,.07,1.7,.025),std(0x252c3c,{metalness:.2,roughness:.6}));top.position.y=deskY;g.add(top);
+    for(const sx of[-1,1])for(const sz of[-1,1]){const l=new THREE.Mesh(RB(.06,deskY,.06,.02,2),standMat);l.position.set(sx*1.6,deskY/2,sz*.75);g.add(l)}
+    const housing=new THREE.Mesh(RB(2.1,1.22,.045,.022),std(0x111419,{metalness:.35,roughness:.4}));housing.position.y=1.5;g.add(housing);
+    const disp=new THREE.Mesh(new THREE.PlaneGeometry(2.02,1.1),new THREE.MeshBasicMaterial({map:screenTex,color:0x9a9a9a}));disp.position.set(0,1.515,.0235);g.add(disp);
+    const back=new THREE.Mesh(RB(1.1,.7,.1,.04),darkMat);back.position.set(0,1.5,-.06);g.add(back);
+    const arm=new THREE.Mesh(RB(.08,.6,.05,.02,2),standMat);arm.position.set(0,1.05,-.11);g.add(arm);
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(.34,.36,.03,40),standMat);base.scale.z=.7;base.position.set(0,deskY+.05,-.12);g.add(base);
+    const cam=new THREE.Mesh(RB(.24,.08,.08,.03),darkMat);cam.position.set(0,2.16,0);g.add(cam);
+    const lens=new THREE.Mesh(new THREE.CylinderGeometry(.026,.026,.02,24),new THREE.MeshStandardMaterial({color:0x0a0d14,metalness:1,roughness:.05}));lens.rotation.x=Math.PI/2;lens.position.set(0,2.16,.045);g.add(lens);
+    const camLed=new THREE.Mesh(ledGeo,new THREE.MeshBasicMaterial({color:0xff4d6d}));camLed.scale.setScalar(.6);camLed.position.set(.07,2.16,.043);g.add(camLed);
+    blinkers.push({m:camLed.material,base:new THREE.Color(0xff4d6d),ph:0,sp:3});
+    const kb=new THREE.Mesh(RB(1.3,.035,.42,.012,2),darkMat);kb.position.set(-.1,deskY+.053,.42);g.add(kb);
+    const keys=new THREE.Mesh(new THREE.PlaneGeometry(1.24,.38),new THREE.MeshStandardMaterial({map:kbTex,roughness:.6}));keys.rotation.x=-Math.PI/2;keys.position.set(-.1,deskY+.072,.42);g.add(keys);
+    const mouse=new THREE.Mesh(new THREE.SphereGeometry(.07,20,14),darkMat);mouse.scale.set(.8,.4,1.2);mouse.position.set(.85,deskY+.05,.45);g.add(mouse);
+    // PC tower (유리 측면 + 내부 조명)
+    const tw=new THREE.Group();tw.position.set(2.1,0,.05);g.add(tw);
+    const box=new THREE.Mesh(RB(.5,1.1,1.05,.03),std(0x141924));box.position.y=.6;tw.add(box);
+    const glass=new THREE.Mesh(new THREE.PlaneGeometry(.95,.95),new THREE.MeshStandardMaterial({color:0x0a1a3a,metalness:.9,roughness:.05,transparent:true,opacity:.55,envMapIntensity:1}));glass.rotation.y=-Math.PI/2;glass.position.set(-.252,.6,0);tw.add(glass);
+    const rgb=new THREE.Mesh(new THREE.BoxGeometry(.01,.8,.02),new THREE.MeshBasicMaterial({color:0x2cd9ff}));rgb.position.set(-.2,.6,-.42);tw.add(rgb);
+    const fan=new THREE.Mesh(new THREE.TorusGeometry(.13,.012,8,32),new THREE.MeshBasicMaterial({color:0x3d8bff}));fan.rotation.y=Math.PI/2;fan.position.set(-.2,.85,.15);tw.add(fan);
+    shadows(g);
+    g.userData={body:housing,edge:null};return g;
+  }
+
+  /* ---- place fixed objects ---- */
+  const P={sender:new THREE.Vector3(-10.5,0,1),origin:new THREE.Vector3(-3.6,0,0),nodeX:3.6,viewerX:9.2};
+  // 중계 서버 수에 맞춰 노드 받침대 위에 3.1 간격으로 세운다
+  const EZ=EDGES.map((_,i)=>(i-(EDGES.length-1)/2)*3.1),PLAT_L=Math.max(6.4,EDGES.length*3.1+3.2);
+
+  const sGroup=sender();sGroup.position.copy(P.sender);sGroup.rotation.y=.35;scene.add(sGroup);
+  sGroup.userData.pick={kind:'sender'};pickables.push(sGroup);
+  const senderHTML=()=>`<span class="dot ${SNAP.origin.broadcasters.sending?'live':''}"></span>송출자 ${SNAP.origin.broadcasters.sending}명<small>${SNAP.origin.broadcasters.sending?'송출 중':'송출 없음'}</small>`;
+  labels.sender=label(senderHTML(),'',new THREE.Vector3(0,2.75,0),sGroup,{kind:'sender'});
+
+  const oGroup=rack({w:1.7,h:3.2,d:1.5,accent:0x2cd9ff,units:8,name:SNAP.origin.id.slice(0,14)});oGroup.position.copy(P.origin).setY(.14);scene.add(oGroup);
+  const oBase=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.75,.14,48),std(0x0d1530));oBase.position.copy(P.origin).setY(.07);scene.add(oBase);
+  const oRing=new THREE.Mesh(new THREE.TorusGeometry(1.68,.025,8,96),new THREE.MeshBasicMaterial({color:0x2cd9ff}));oRing.rotation.x=Math.PI/2;oRing.position.copy(P.origin).setY(.15);scene.add(oRing);
+  oGroup.userData.pick={kind:'origin'};pickables.push(oGroup);
+  const originHTML=()=>`<span class="dot"></span>${esc(SNAP.origin.id)}<small>원본 서버 · ${SNAP.origin.collectorOk?'정상 동작':'수집 실패'}</small>`;
+  labels.origin=label(originHTML(),'',new THREE.Vector3(0,3.85,0),oGroup,{kind:'origin'});
+
+  const plat=new THREE.Mesh(RB(2.9,.18,PLAT_L,.04),new THREE.MeshStandardMaterial({map:tileTex,metalness:.5,roughness:.45,envMapIntensity:.4}));plat.position.set(P.nodeX,.09,0);plat.receiveShadow=true;scene.add(plat);
+  for(const sx of[-1,1]){const st=new THREE.Mesh(new THREE.BoxGeometry(.03,.03,PLAT_L-.1),new THREE.MeshBasicMaterial({color:0x0075ff}));st.position.set(P.nodeX+sx*1.45,.15,0);scene.add(st)}
+  const platGlow=new THREE.Mesh(new THREE.PlaneGeometry(6,PLAT_L+3.2),new THREE.MeshBasicMaterial({map:glowTex,color:0x0075ff,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false}));
+  platGlow.rotation.x=-Math.PI/2;platGlow.position.set(P.nodeX,.02,0);scene.add(platGlow);
+  const nodeNames=[...new Set(EDGES.map((_,i)=>nodeOfEdge(i)))];
+  label(`${esc(nodeNames.join(', ')||'노드')} · 중계 서버 ${EDGES.length}대`,'tag',new THREE.Vector3(P.nodeX,.2,PLAT_L/2+.5),scene);
+
+  const edgeStateTxt=r=>r.state==='lost'?'신호 끊김':r.state==='stale'?'신호 지연':r.state==='warning'?'주의':'';
+  const edgeLabelHTML=i=>{const r=EDGES[i].raw,st=edgeStateTxt(r);return `<span class="chip"></span>${esc(EDGES[i].name)}<small>${st?st+' · ':''}CPU ${fmtPct(EDGES[i].cpu)} · 시청자 ${edgeCount(i)}명</small>`};
+  const eGroups=EDGES.map((e,i)=>{
+    const g=rack({cpu:e.cpu==null?0:Math.min(100,e.cpu),accent:new THREE.Color(e.color).getHex(),name:e.name.slice(0,14)});g.position.set(P.nodeX,.18,EZ[i]);scene.add(g);
+    g.userData.pick={kind:'edge',i};pickables.push(g);
+    labels['edge'+i]=label(edgeLabelHTML(i),'edge-l'+(e.raw.state==='lost'||e.raw.state==='stale'?' bad':''),new THREE.Vector3(0,3.15,0),g,{kind:'edge',i},`--c:${e.color}`);
+    return g;
+  });
+
+  /* ---- links ---- */
+  function makeCurve(a,b,lift){const m1=a.clone().lerp(b,.33),m2=a.clone().lerp(b,.66),h=lift+a.distanceTo(b)*.05;m1.y+=h;m2.y+=h;return new THREE.CatmullRomCurve3([a,m1,m2,b])}
+  const coreLinks=[];
+  function coreLink(a,b,o){const curve=makeCurve(a,b,1.1),tube=new THREE.Mesh(new THREE.TubeGeometry(curve,80,.045,8,false),new THREE.MeshBasicMaterial({color:o.color,transparent:true,opacity:.3,blending:THREE.AdditiveBlending,depthWrite:false}));scene.add(tube);coreLinks.push({...o,curve,tube,col:new THREE.Color(o.color),act:1,len:curve.getLength()})}
+  coreLink(new THREE.Vector3(-8.55,1.15,.35),new THREE.Vector3(-4.45,1.9,0),{from:'sender',to:'origin',n:12,speed:.32,color:0x3d8bff});
+  EDGES.forEach((e,i)=>coreLink(new THREE.Vector3(-2.75,2,0),new THREE.Vector3(P.nodeX-.65,1.5,EZ[i]),{from:'origin',to:'edge'+i,n:8,speed:.26,color:new THREE.Color(e.color).getHex()}));
+
+  /* ---- viewers (동적) ---- */
+  const vObjs=[]; // {group, tube, curve, len, act, label}
+  const tubeMat=i=>new THREE.MeshBasicMaterial({color:EDGES[i].color,transparent:true,opacity:.35,blending:THREE.AdditiveBlending,depthWrite:false});
+  const edgePort=i=>new THREE.Vector3(P.nodeX+.65,1.5,EZ[i]);
+  const viewerPort=g=>g.position.clone().add(new THREE.Vector3(-.25,.8,0));
+  function rebuildLink(o,v){
+    o.curve=makeCurve(edgePort(v.edge),viewerPort(o.group),.45);o.len=o.curve.getLength();
+    const geo=new THREE.TubeGeometry(o.curve,48,.016,6,false);
+    if(o.tube){o.tube.geometry.dispose();o.tube.geometry=geo}else{o.tube=new THREE.Mesh(geo,tubeMat(v.edge));scene.add(o.tube)}
+  }
+
+  /* 자동 배치: 서버별 기준점에서 가까운 빈 칸부터 채움 (겹침 없음) */
+  const CX=1.35,CZ=1.2;
+  const cellKey=(x,z)=>Math.round(x/CX)+','+Math.round(z/CZ);
+  function freeCell(edge,occ){
+    const ax=P.viewerX,az=EZ[edge];let best=null,bc=1e9;
+    for(let gx=Math.round(ax/CX);gx<Math.round(ax/CX)+60;gx++){
+      const x=gx*CX;if(Math.abs(x-ax)*.75>bc)break;
+      for(let gz=-14;gz<=14;gz++){
+        const k=gx+','+gz;if(occ.has(k))continue;
+        const z=gz*CZ,cost=Math.abs(x-ax)*.75+Math.abs(z-az)*1.5;
+        if(cost<bc){bc=cost;best=[x,z,k]}
+      }
+    }
+    return best;
+  }
+  let saved={};try{saved=JSON.parse(localStorage.getItem('sfu3d-viewer-pos')||'{}')}catch(e){}
+  const savePos=()=>{try{const m={};VIEWERS.forEach((v,i)=>{if(vObjs[i]&&vObjs[i].manual)m[v.id]=[+vObjs[i].group.position.x.toFixed(2),+vObjs[i].group.position.z.toFixed(2)]});localStorage.setItem('sfu3d-viewer-pos',JSON.stringify(m))}catch(e){}};
+  const occupied=()=>new Set(vObjs.map(o=>cellKey(o.group.position.x,o.group.position.z)));
+
+  const viewerLabelHTML=v=>`${esc(v.name)}<small>LATE ${v.late.toFixed(1)}% · ${v.layer.split(' ')[0]}</small>`;
+  function addViewer3D(v,i,spawn){
+    const g=viewerDev(v);scene.add(g);
+    const sp=saved[v.id];
+    if(sp){g.position.set(sp[0],0,sp[1])}else{const c=freeCell(v.edge,occupied());g.position.set(c[0],0,c[1])}
+    const pick={kind:'viewer',i};g.userData.pick=pick;pickables.push(g);
+    const o={group:g,act:1,manual:!!sp,spawning:!!spawn,grow:spawn?0:1,pick};vObjs[i]=o;rebuildLink(o,v);
+    if(spawn){g.scale.setScalar(.001);o.tube.geometry.setDrawRange(0,0)}
+    const w=v.late>=WARN_LATE;
+    o.label=labels['viewer'+i]=label(viewerLabelHTML(v),'v'+(w?' warn':''),new THREE.Vector3(0,1.45,0),g,pick,`--c:${EDGES[v.edge].color}`);
+    o.warn=w;
+  }
+  function relayout(only){ // only: 선택한 시청자만 다시 배치 (나머지는 그대로)
+    const ids=only&&only.length?only:VIEWERS.map((_,i)=>i),set=new Set(ids);
+    const occ=new Set(vObjs.filter((o,i)=>!set.has(i)).map(o=>cellKey(o.group.position.x,o.group.position.z)));
+    ids.sort((a,b)=>VIEWERS[a].edge-VIEWERS[b].edge||a-b).forEach(i=>{
+      const c=freeCell(VIEWERS[i].edge,occ);occ.add(c[2]);vObjs[i].group.position.set(c[0],0,c[1]);vObjs[i].manual=false;rebuildLink(vObjs[i],VIEWERS[i]);
+    });
+    savePos();
+  }
+
+  /* ---- particles ---- */
+  const TRAIL=4,VN=4,VTRAIL=3;
+  const ptsMat=size=>new THREE.PointsMaterial({size,map:glowTex,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+  function makePoints(count,size){const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(count*3),3));geo.setAttribute('color',new THREE.BufferAttribute(new Float32Array(count*3),3));const p=new THREE.Points(geo,ptsMat(size));p.frustumCulled=false;scene.add(p);return p}
+  const corePts=makePoints(coreLinks.reduce((a,l)=>a+l.n*TRAIL,0),.42);
+  let viewerPts=null;
+  function rebuildViewerPoints(){if(viewerPts){scene.remove(viewerPts);viewerPts.geometry.dispose()}viewerPts=makePoints(Math.max(1,VIEWERS.length*VN*VTRAIL),.26)}
+
+  VIEWERS.forEach((v,i)=>addViewer3D(v,i));rebuildViewerPoints();
+
+  /* ---- 입장 애니메이션: origin이 중계 서버를 고르고 → edge를 거쳐 → 시청자 모니터가 생김 ---- */
+  // 어느 중계 서버로 갈지는 로드 밸런서가 정한다. 화면은 결과(edge)만 실제 값이고, 배정 사유는 MOCK(C3)이다.
+  const assigned=i=>VIEWERS.filter(v=>v.edge===i).length; // 입장 중인 시청자까지 포함
+  const edgeCurve=i=>coreLinks.find(l=>l.to==='edge'+i).curve;
+  const joins=[],JT=10,MAXJ=40,T_GO=.3,T_TRAVEL=1.9,T_POPDUR=.35; // origin 깜빡임 → 한 줄로 끊김 없이 이동 → 모니터 등장
+  const joinPts=makePoints(MAXJ*JT,1.05);
+  const bursts=[],burstGeo=new THREE.RingGeometry(.86,1,56);
+  function burst(pos,color,size){const m=new THREE.Mesh(burstGeo,new THREE.MeshBasicMaterial({color,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.position.copy(pos);scene.add(m);bursts.push({m,t0:clock.elapsedTime,size})}
+  const toastEl=document.createElement('div');toastEl.className='lbl join hide';const toast=new CSS2DObject(toastEl);toast.position.set(P.origin.x,5.5,0);scene.add(toast);let toastUntil=0;
+  function arrive(j){
+    const o=vObjs[j.i];VIEWERS[j.i].joining=false;o.spawning=false;o.grow=1;o.group.scale.setScalar(1);o.tube.geometry.setDrawRange(0,Infinity);
+    labels['edge'+j.edge].innerHTML=edgeLabelHTML(j.edge);refreshPanels();updateViewerLabels();
+  }
+  // 실제 입장: 스트림에서 새 시청자가 오면 origin → 중계 서버 → 시청자 순서로 나타난다.
+  // 한꺼번에 많이 들어오면(밀린 입장 12명 초과) 나머지는 애니메이션 없이 바로 놓는다.
+  const MAX_ANIM_BACKLOG=12;
+  joinViewers=list=>{
+    const now=clock.elapsedTime,last=joins.length?Math.max(...joins.map(j=>j.t0)):-1;let k=0;
+    for(const v of list){
+      const anim=!reduce&&joins.length<MAX_ANIM_BACKLOG,before=assigned(v.edge);v.joining=anim;VIEWERS.push(v);const i=VIEWERS.length-1;addViewer3D(v,i,anim);
+      if(anim){joins.push({i,edge:v.edge,before,t0:Math.max(now,last+.4)+k*.4,stage:0});k++}
+    }
+    rebuildViewerPoints();
+    EDGES.forEach((_,i)=>labels['edge'+i].innerHTML=edgeLabelHTML(i));
+    applySelection();refreshPanels();syncMulti();
+  };
+  // 퇴장: 모니터와 연결선을 지우고, 뒤쪽 시청자의 번호(index)를 당긴다.
+  leaveViewers=idx=>{
+    const desc=[...new Set(idx)].sort((a,b)=>b-a);
+    if(drag&&drag.ids.some(k=>desc.includes(k))){drag=null;controls.enabled=true}
+    for(const i of desc){
+      const o=vObjs[i];if(!o)continue;
+      burst(o.group.position.clone().setY(.04),0xff4d6d,.7);
+      if(hovered===o.group)setHover(null);
+      o.label._obj.removeFromParent();scene.remove(o.group);scene.remove(o.tube);o.tube.geometry.dispose();o.tube.material.dispose();
+      const p=pickables.indexOf(o.group);if(p>=0)pickables.splice(p,1);
+      VIEWERS.splice(i,1);vObjs.splice(i,1);
+      for(let n=joins.length-1;n>=0;n--){if(joins[n].i===i)joins.splice(n,1);else if(joins[n].i>i)joins[n].i--}
+      if(sel&&sel.kind==='viewer'){if(sel.i===i)sel=null;else if(sel.i>i)sel.i--}
+      const m=[...multi];multi.clear();m.forEach(k=>{if(k<i)multi.add(k);else if(k>i)multi.add(k-1)});
+    }
+    for(const key of Object.keys(labels))if(key.startsWith('viewer'))delete labels[key];
+    vObjs.forEach((o,k)=>{o.pick.i=k;labels['viewer'+k]=o.label});
+    rebuildViewerPoints();
+    EDGES.forEach((_,i)=>labels['edge'+i].innerHTML=edgeLabelHTML(i));
+    applySelection();refreshPanels();syncMulti();
+  };
+  // 1초마다: 서버 라벨, 시청자 라벨·경고 색 갱신
+  onEdgesUpdated=()=>{
+    EDGES.forEach((e,i)=>{const el=labels['edge'+i];el.innerHTML=edgeLabelHTML(i);el.classList.toggle('bad',e.raw.state==='lost'||e.raw.state==='stale')});
+    labels.origin.innerHTML=originHTML();labels.sender.innerHTML=senderHTML();
+  };
+  const AMBER_HEX=0xffb547;
+  onViewersUpdated=()=>{
+    VIEWERS.forEach((v,i)=>{const o=vObjs[i];if(!o)return;const w=v.late>=WARN_LATE;
+      o.label.innerHTML=viewerLabelHTML(v);
+      if(o.warn!==w){o.warn=w;o.label.classList.toggle('warn',w);const c=w?AMBER_HEX:new THREE.Color(EDGES[v.edge].color).getHex();o.group.userData.edge.material.color.setHex(c);o.group.userData.ring.material.color.setHex(c)}});
+    $('#empty-scene').hidden=VIEWERS.length>0;
+  };
+  $('#empty-scene').hidden=VIEWERS.length>0;
+  const easeBack=x=>1+2.2*Math.pow(x-1,3)+1.2*Math.pow(x-1,2);
+  // 시작과 끝만 부드럽게, 중간은 일정한 속도 (서버에서 멈추지 않음)
+  const easeTravel=x=>{const a=.18;return x<a?x*x/(2*a*(1-a)):x>1-a?1-(1-x)*(1-x)/(2*a*(1-a)):(x-a/2)/(1-a)};
+  function animateJoins(t){
+    const pos=joinPts.geometry.attributes.position.array,col=joinPts.geometry.attributes.color.array;
+    pos.fill(0);col.fill(0);for(let k=1;k<pos.length;k+=3)pos[k]=-50;
+    let k=0;const W=new THREE.Color(0xffffff);
+    for(let n=joins.length-1;n>=0;n--){
+      const j=joins[n],e=t-j.t0,o=vObjs[j.i],ec=new THREE.Color(EDGES[j.edge].color);if(e<0)continue;
+      if(k>=MAXJ*JT)break;
+      // 1) origin에 입장 요청 도착 + 배정 안내
+      if(!j.started){j.started=true;burst(P.origin.clone().setY(.2),0x2cd9ff,2.1);const v=VIEWERS[j.i];
+        toastEl.style.setProperty('--c',EDGES[j.edge].color);
+        toastEl.innerHTML=`${esc(v.name)} 입장 → <b>${esc(EDGES[j.edge].name)}</b><small>배정 전 시청자 ${j.before}명 · 배정 사유${MOCK}</small>`;
+        toastEl.classList.remove('hide');toastUntil=t+2.2}
+      // 2) 고른 서버로 가는 한 줄만 빛이 이동: origin → edge → 시청자 (두 구간을 하나의 경로로)
+      const c1=edgeCurve(j.edge),c2=o.curve,L1=c1.getLength(),L2=o.len,L=L1+L2;
+      const pathPt=(d,out)=>d<=L1?c1.getPointAt(Math.max(0,d/L1),out):c2.getPointAt(Math.min(1,(d-L1)/L2),out);
+      const te=e-T_GO;
+      if(te>=0&&te<T_TRAVEL){
+        const d=easeTravel(te/T_TRAVEL)*L;
+        for(let tr=0;tr<JT;tr++){const dd=d-tr*.16;if(dd<0)break;pathPt(dd,tmp);writePt(pos,col,k+tr,tmp,tr?ec:W,(1-tr/JT)*(tr?2.2:3.2))}
+        if(d>L1){o.grow=(d-L1)/L2;o.tube.geometry.setDrawRange(0,Math.ceil(o.tube.geometry.index.count*o.grow/6)*6)} // 지나간 만큼 연결선이 생김
+        if(j.stage===0&&d>=L1){j.stage=1;const el=labels['edge'+j.edge];burst(eGroups[j.edge].position.clone().setY(.24),ec.getHex(),1.7);el.classList.add('ping');setTimeout(()=>el.classList.remove('ping'),550)}
+      }
+      k+=JT;
+      // 3) 시청자 모니터가 나타남
+      if(j.stage<2&&te>=T_TRAVEL){j.stage=2;burst(o.group.position.clone().setY(.04),ec.getHex(),.9);o.tube.geometry.setDrawRange(0,Infinity)}
+      if(j.stage===2){const p=Math.min(1,(te-T_TRAVEL)/T_POPDUR);o.group.scale.setScalar(Math.max(.001,easeBack(p)));if(p>=1){arrive(j);joins.splice(n,1)}}
+    }
+    joinPts.geometry.attributes.position.needsUpdate=true;joinPts.geometry.attributes.color.needsUpdate=true;
+    for(let n=bursts.length-1;n>=0;n--){const b=bursts[n],p=(t-b.t0)/.7;if(p>=1){scene.remove(b.m);b.m.material.dispose();bursts.splice(n,1);continue}
+      b.m.scale.setScalar(b.size*(.3+p*1.1));b.m.material.opacity=1-p}
+    if(toastUntil&&t>toastUntil){toastEl.classList.add('hide');toastUntil=0}
+  }
+  $('#relayout').onclick=()=>relayout();
+
+  /* qdisc drop sparks */
+  const DROPS=60,drops=[];for(let i=0;i<DROPS;i++)drops.push({life:0,p:new THREE.Vector3(0,-50,0),v:new THREE.Vector3()});
+  const dropPts=makePoints(DROPS,.3);const AMBER=new THREE.Color(0xffb547);
+  let dropTimer=0,dropIdx=0;
+
+  /* ---- selection ---- */
+  const viewerRelated=i=>{if(!sel)return true;const v=VIEWERS[i];return sel.kind==='viewer'?sel.i===i:sel.kind==='edge'?v.edge===sel.i:sel.kind==='origin'};
+  function coreRelated(l){
+    if(!sel)return true;
+    if(sel.kind==='edge')return l.to==='edge'+sel.i;
+    if(sel.kind==='origin')return true;
+    if(sel.kind==='sender')return l.from==='sender';
+    return l.to==='edge'+VIEWERS[sel.i].edge||l.from==='sender';
+  }
+  function applySelection(){
+    const s=sel,k=s?(s.kind==='edge'?'edge'+s.i:s.kind==='viewer'?'viewer'+s.i:s.kind):null;
+    const keep=new Set([k]);
+    if(s&&s.kind==='viewer'){keep.add('edge'+VIEWERS[s.i].edge);keep.add('origin');keep.add('sender')}
+    if(s&&s.kind==='edge'){keep.add('origin');VIEWERS.forEach((v,i)=>{if(v.edge===s.i)keep.add('viewer'+i)})}
+    if(s&&s.kind==='origin'){keep.add('sender');EDGES.forEach((_,i)=>keep.add('edge'+i));VIEWERS.forEach((_,i)=>keep.add('viewer'+i))}
+    if(s&&s.kind==='sender')keep.add('origin');
+    for(const [name,el] of Object.entries(labels)){el.classList.toggle('sel',name===k);el.classList.toggle('dim',!!s&&!keep.has(name))}
+  }
+  function objPos(s){if(!s)return HOME;const g=s.kind==='edge'?eGroups[s.i]:s.kind==='viewer'?vObjs[s.i].group:s.kind==='origin'?oGroup:sGroup;return g.position.clone().setY(1.2)}
+  let focus=null,homing=false;
+  select=s=>{sel=s;applySelection();updateViewerLabels();if(s)focus=controls.target.clone().lerp(objPos(s),.5);refreshPanels()};
+  $('#home').onclick=()=>{homing=true;focus=null};
+
+  /* ---- picking, dragging, multi-select ---- */
+  const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),ground=new THREE.Plane(new THREE.Vector3(0,1,0),0),hitP=new THREE.Vector3(),proj=new THREE.Vector3();
+  let hovered=null,down=null,drag=null,marquee=null,pending=null,boxMode=false;
+  const selBox=document.createElement('div');selBox.className='marquee';selBox.hidden=true;wrap.appendChild(selBox);
+  function setRay(e){const r=stage.getBoundingClientRect();mouse.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mouse,camera)}
+  function pickAt(e){setRay(e);const hit=ray.intersectObjects(pickables,true)[0];let o=hit&&hit.object;while(o&&!o.userData.pick)o=o.parent;return o||null}
+  function setHover(g){
+    if(hovered===g)return;
+    if(hovered){hovered.userData.body.material.emissive.setHex(0);if(hovered.userData.edge)hovered.userData.edge.material.opacity=hovered.userData.edgeOp}
+    hovered=g;stage.classList.toggle('hover',!!g&&g.userData.pick.kind!=='viewer');stage.classList.toggle('movable',!!g&&g.userData.pick.kind==='viewer');
+    if(g){g.userData.body.material.emissive.setHex(0x0b2a6b);if(g.userData.edge)g.userData.edge.material.opacity=1}
+  }
+  const endClick=()=>{dragJustEnded=true;setTimeout(()=>dragJustEnded=false,0)};
+
+  /* 다중 선택 상태 반영 */
+  syncMulti=()=>{
+    vObjs.forEach((o,i)=>{o.group.userData.selRing.visible=multi.has(i);o.label.classList.toggle('msel',multi.has(i))});
+    $('#msel').hidden=!multi.size;$('#msel-n').textContent=multi.size;
+    updateViewerLabels();renderViewers();
+  };
+  const setMulti=ids=>{multi.clear();ids.forEach(i=>multi.add(i));syncMulti()};
+  toggleMulti=i=>{multi.has(i)?multi.delete(i):multi.add(i);syncMulti()};
+
+  /* 시청자 드래그: 다중 선택에 포함된 시청자를 잡으면 선택된 전원이 함께 이동 */
+  function startDrag(i,e){
+    setRay(e);if(!ray.ray.intersectPlane(ground,hitP))return;
+    const ids=multi.has(i)?[...multi]:[i];
+    drag={i,ids,offs:ids.map(k=>vObjs[k].group.position.clone().sub(hitP)),x:e.clientX,y:e.clientY,moved:false};
+    controls.enabled=false;
+  }
+  function viewerDown(i,e){
+    down=[e.clientX,e.clientY];
+    if(e.shiftKey||e.ctrlKey||e.metaKey){pending={i,x:e.clientX,y:e.clientY,e};controls.enabled=false;return} // 클릭: 추가/제외, 드래그: 범위 선택
+    startDrag(i,e);
+  }
+  viewerLabelDown=(i,e)=>{if(e.button===0)viewerDown(i,e)};
+
+  /* 범위 선택 (드래그 박스) */
+  function viewersInRect(x0,y0,x1,y1){
+    const r=stage.getBoundingClientRect(),res=[];
+    vObjs.forEach((o,i)=>{proj.copy(o.group.position).setY(.8).project(camera);if(proj.z>1)return;
+      const sx=(proj.x+1)/2*r.width,sy=(1-proj.y)/2*r.height;if(sx>=x0&&sx<=x1&&sy>=y0&&sy<=y1)res.push(i)});
+    return res;
+  }
+  function startMarquee(e){const r=stage.getBoundingClientRect();const mod=e.ctrlKey||e.metaKey;marquee={x0:e.clientX-r.left,y0:e.clientY-r.top,add:boxMode?(e.shiftKey||mod):(e.shiftKey&&mod),base:[...multi],moved:false};controls.enabled=false}
+  function updateMarquee(e){
+    const r=stage.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,m=marquee;
+    if(!m.moved&&Math.hypot(x-m.x0,y-m.y0)<4)return;m.moved=true;
+    const x0=Math.min(x,m.x0),y0=Math.min(y,m.y0),x1=Math.max(x,m.x0),y1=Math.max(y,m.y0);
+    Object.assign(selBox.style,{left:x0+'px',top:y0+'px',width:(x1-x0)+'px',height:(y1-y0)+'px'});selBox.hidden=false;
+    const inside=viewersInRect(x0,y0,x1,y1);setMulti(m.add?[...new Set([...m.base,...inside])]:inside);
+  }
+  $('#boxmode').onclick=e=>{boxMode=!boxMode;e.currentTarget.classList.toggle('on',boxMode);e.currentTarget.setAttribute('aria-pressed',boxMode);stage.classList.toggle('boxmode',boxMode)};
+  $('#msel-clear').onclick=()=>setMulti([]);
+  $('#msel-layout').onclick=()=>relayout([...multi]);
+
+  // capture 단계: OrbitControls보다 먼저 받아서 시청자/범위 선택을 우선 처리
+  stage.addEventListener('pointerdown',e=>{
+    down=[e.clientX,e.clientY];
+    if(e.button!==0)return;
+    const g=pickAt(e);
+    if(g&&g.userData.pick.kind==='viewer'){viewerDown(g.userData.pick.i,e);return}
+    if(boxMode||e.shiftKey)startMarquee(e); // 범위 선택 모드이거나 Shift+드래그
+  },{capture:true});
+  addEventListener('pointermove',e=>{
+    if(drag){
+      if(!drag.moved&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<4)return;
+      drag.moved=true;setRay(e);if(!ray.ray.intersectPlane(ground,hitP))return;
+      drag.ids.forEach((k,n)=>{vObjs[k].group.position.set(hitP.x+drag.offs[n].x,0,hitP.z+drag.offs[n].z);rebuildLink(vObjs[k],VIEWERS[k])});return;
+    }
+    if(pending&&Math.hypot(e.clientX-pending.x,e.clientY-pending.y)>=4){const p=pending;pending=null;startMarquee(p.e)}
+    if(marquee){updateMarquee(e);return}
+    if(e.target===stage&&!e.buttons)setHover(pickAt(e));
+  });
+  addEventListener('pointerup',e=>{
+    if(pending){const p=pending;pending=null;controls.enabled=true;if(Math.hypot(e.clientX-p.x,e.clientY-p.y)<5)toggleMulti(p.i);endClick();return}
+    if(drag){const d=drag;drag=null;controls.enabled=true;if(d.moved){d.ids.forEach(k=>vObjs[k].manual=true);savePos();endClick();return}}
+    if(marquee){const m=marquee;marquee=null;selBox.hidden=true;controls.enabled=true;if(m.moved){endClick();return}}
+    if(e.target!==stage||!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
+    const g=pickAt(e);if(multi.size)setMulti([]);select(g?g.userData.pick:null);
+  });
+  stage.addEventListener('contextmenu',e=>e.preventDefault());
+  addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='Escape'){if(multi.size)setMulti([]);else select(null)}
+    if((e.key==='v'||e.key==='V')&&!e.ctrlKey&&!e.metaKey)$('#boxmode').click();
+    if((e.key==='a'||e.key==='A')&&(e.ctrlKey||e.metaKey)){e.preventDefault();setMulti(VIEWERS.map((_,i)=>i))}});
+
+  function updateViewerLabels(){const many=VIEWERS.length>12;VIEWERS.forEach((v,i)=>{const o=vObjs[i],isSel=sel&&sel.kind==='viewer'&&sel.i===i,isHover=hovered===o.group||(drag&&drag.ids.includes(i));
+      let show=!many||camera.position.distanceTo(o.group.position)<11||v.late>=WARN_LATE;
+      if(many&&sel&&!viewerRelated(i))show=false; // 선택과 무관한 시청자 이름표는 숨김
+      o.label.classList.toggle('off',o.spawning||!(show||isSel||isHover||(multi.has(i)&&multi.size<=6)))})} // 많이 선택하면 이름표 대신 바닥 선택 링으로 표시
+
+  /* ---- resize ---- */
+  let homeDist=26;
+  function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;renderer.setSize(w,h);composer.setSize(w,h);bloom.setSize(w,h);labelR.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();homeDist=Math.max(24,24*1.7/camera.aspect)}
+  new ResizeObserver(resize).observe(wrap);resize();
+  camera.position.copy(HOME).addScaledVector(VIEW_DIR,homeDist);
+
+  /* ---- animate ---- */
+  const clock=new THREE.Clock(),tmp=new THREE.Vector3(),c=new THREE.Color(),camGoal=new THREE.Vector3();
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let frameNo=0;
+  function writePt(arr,carr,k,p,col,b){arr[k*3]=p.x;arr[k*3+1]=p.y;arr[k*3+2]=p.z;carr[k*3]=col.r*b;carr[k*3+1]=col.g*b;carr[k*3+2]=col.b*b}
+  function frame(){
+    const dt=Math.min(clock.getDelta(),.05),t=reduce?0:clock.elapsedTime;frameNo++;
+    if(homing){camGoal.copy(HOME).addScaledVector(VIEW_DIR,homeDist);controls.target.lerp(HOME,.08);camera.position.lerp(camGoal,.08);if(camera.position.distanceTo(camGoal)<.05)homing=false}
+    else if(focus){controls.target.lerp(focus,.07);if(controls.target.distanceTo(focus)<.01)focus=null}
+    controls.update();
+
+    // core links
+    {const pos=corePts.geometry.attributes.position.array,col=corePts.geometry.attributes.color.array;let k=0;
+    for(const l of coreLinks){
+      l.act+=((coreRelated(l)?1:.12)-l.act)*.08;l.tube.material.opacity=.06+.26*l.act;
+      for(let j=0;j<l.n;j++)for(let tr=0;tr<TRAIL;tr++){
+        let u=(j/l.n+t*l.speed*(8/l.len)-tr*.016)%1;if(u<0)u+=1;l.curve.getPointAt(u,tmp);
+        writePt(pos,col,k++,tmp,l.col,l.act*(1-tr*.24)*Math.min(1,Math.sin(Math.PI*u)*3)*1.6);
+      }}
+    corePts.geometry.attributes.position.needsUpdate=true;corePts.geometry.attributes.color.needsUpdate=true;}
+
+    // viewer links: 서버 색으로 흐르고, LATE 경고 시청자는 주황 입자가 섞이고 느리게 흐름
+    {const pos=viewerPts.geometry.attributes.position.array,col=viewerPts.geometry.attributes.color.array;let k=0;
+    VIEWERS.forEach((v,i)=>{
+      const o=vObjs[i],warn=v.late>=WARN_LATE,ec=c.set(EDGES[v.edge].color).clone();
+      o.act+=((viewerRelated(i)?1:.1)-o.act)*.08;o.tube.material.opacity=.05+.4*o.act;
+      const sp=warn?.16:.34;
+      for(let j=0;j<VN;j++)for(let tr=0;tr<VTRAIL;tr++){
+        let u=(j/VN+t*sp*(6/o.len)+i*.137-tr*.02)%1;if(u<0)u+=1;o.curve.getPointAt(u,tmp);
+        writePt(pos,col,k++,tmp,warn&&j%2?AMBER:ec,(o.spawning?0:1)*o.act*(1-tr*.3)*Math.min(1,Math.sin(Math.PI*u)*3)*1.7);
+      }
+    });
+    viewerPts.geometry.attributes.position.needsUpdate=true;viewerPts.geometry.attributes.color.needsUpdate=true;}
+
+    // 시청자 이름표: 가까이 있거나, 경고/선택/호버된 시청자만 표시 (많아져도 덜 복잡하게)
+    if(frameNo%6===0)updateViewerLabels();
+    if(!reduce)animateJoins(clock.elapsedTime);
+
+    // qdisc drop
+    if(!reduce){const dropRate=lastNum(NODE_TS.drop)??0,gap=dropRate>0?2.2/dropRate:1e9;dropTimer=dropRate>0?dropTimer+dt:0;while(dropTimer>gap){dropTimer-=gap; // 현재 qdisc drop 값에 비례해 불꽃 생성
+      
+      if(!vObjs.length)break;
+      const o=vObjs[Math.floor(Math.random()*vObjs.length)],d=drops[dropIdx++%DROPS];
+      o.curve.getPointAt(.04+Math.random()*.25,d.p);d.v.set((Math.random()-.5)*.8,.6+Math.random()*.5,(Math.random()-.5)*.8);d.life=1.3}}
+    {const pos=dropPts.geometry.attributes.position.array,col=dropPts.geometry.attributes.color.array;
+    drops.forEach((d,i)=>{if(d.life>0){d.life-=dt;d.v.y-=4*dt;d.p.addScaledVector(d.v,dt)}
+      tmp.set(d.p.x,d.life>0?d.p.y:-50,d.p.z);writePt(pos,col,i,tmp,AMBER,Math.max(0,d.life/1.3)*(sel?.35:1)*1.5)});
+    dropPts.geometry.attributes.position.needsUpdate=true;dropPts.geometry.attributes.color.needsUpdate=true;}
+
+    for(const b of blinkers){const s=b.soft?.75+.25*Math.sin(t*b.sp+b.ph):(Math.sin(t*b.sp+b.ph)>-.2?1:.25);b.m.color.copy(b.base).multiplyScalar(s)}
+    oRing.material.color.setHSL(.53,1,.45+.12*Math.sin(t*2));
+    if(multi.size)multi.forEach(i=>{const r=vObjs[i]&&vObjs[i].group.userData.selRing;if(r)r.material.opacity=.55+.4*Math.sin(t*5)});
+
+    composer.render();labelR.render(scene,camera);
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+</script>
+</body></html>

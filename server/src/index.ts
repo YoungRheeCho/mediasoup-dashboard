@@ -4,18 +4,22 @@ import { registerEdgeRoutes } from './api/edgeRoutes.js';
 import { WorkerTracker } from './api/live.js';
 import { registerOriginRoutes } from './api/originRoutes.js';
 import { AlertEvaluator } from './alerts/evaluator.js';
+import { CentralView } from './central/central.js';
 import { edgeMetrics, originMetrics } from './alerts/metrics.js';
 import { LogSink } from './alerts/sinks.js';
 import { loadConfig } from './config.js';
 import type { Config } from './config.js';
+import type { Batch } from './db/rows.js';
 import { Collector } from './collector/collector.js';
 import { EdgeNormalizer } from './collector/normalizeEdge.js';
 import { OriginNormalizer } from './collector/normalizeOrigin.js';
 import { TimescaleEdgeStore } from './db/timescale/edgeStore.js';
 import { TimescaleOriginStore } from './db/timescale/originStore.js';
+import { BatchDownsampler } from './db/downsample.js';
 import { BatchWriter } from './db/writer.js';
 import { HttpError, HttpServer } from './http/server.js';
 import { staticHandler } from './http/static.js';
+import { K8sDiscovery } from './k8s/discovery.js';
 import { EdgeLivenessSource, PushLivenessReporter } from './liveness/edgeReporter.js';
 import { OriginLivenessMonitor, PullLivenessPoller } from './liveness/originMonitor.js';
 import { createLogger } from './log.js';
@@ -29,11 +33,14 @@ async function main(): Promise<void> {
 	const config = loadConfig();
 
 	logger.info(
-		'starting [mode:%s, server:%s, source:%s, interval:%dms, mock:%s, liveness:%s]',
+		'starting [mode:%s, server:%s, node:%s, source:%s, interval:%dms (db %dms, spread %dms), mock:%s, liveness:%s]',
 		config.mode,
 		config.serverId,
+		config.nodeName ?? '-',
 		config.mediasoupSource,
 		config.collectIntervalMs,
+		config.dbWriteIntervalMs,
+		config.hookSpreadMs,
 		config.mockEnabled,
 		config.liveness.mode
 	);
@@ -49,9 +56,13 @@ async function main(): Promise<void> {
 	await evaluator.init();
 
 	const writer = new BatchWriter(store);
+	// 수집은 1초, DB 기록·알림 평가는 dbWriteIntervalMs(기본 10초)로 합쳐서 한다 (db/downsample.ts).
+	const downsampler = new BatchDownsampler(config.dbWriteIntervalMs);
 	const http = new HttpServer();
+	let central: CentralView | null = null;
 	const stoppers: Array<() => void> = [];
 	const flushers: Array<() => Promise<void>> = [];
+	const downsampled: Array<(batch: Batch) => void> = [];
 	let collector: Collector;
 
 	http.route('GET', '/api/health', () => ({
@@ -84,7 +95,11 @@ async function main(): Promise<void> {
 
 		collector.on('batch', batch => {
 			if (batch.mode === 'edge') {
-				liveness.addBatch(batch);
+				liveness.addBatch(batch); // 1초마다: origin 통합 화면용 실시간 값
+			}
+		});
+		downsampled.push(batch => {
+			if (batch.mode === 'edge') {
 				void evaluator.evaluate(edgeMetrics(batch), batch.time.getTime());
 			}
 		});
@@ -116,11 +131,21 @@ async function main(): Promise<void> {
 		collector = new Collector({ config, source, normalizer, edgeIdByIp: () => monitor.edgeIdByIp() });
 		registerOriginRoutes(http, { ...apiBase(), store: originStore, monitor });
 		registerAlertRoutes(http, { ...apiBase(), store: originStore });
-		collector.on('batch', batch => {
+		downsampled.push(batch => {
 			if (batch.mode === 'origin') {
 				void evaluator.evaluate(originMetrics(batch), batch.time.getTime());
 			}
 		});
+
+		// 통합 3D 화면: edge들의 1초 실시간 값 + origin 수집값 (+ 선택: k8s 노드·Pod 목록)
+		const k8s = config.k8s.enabled ? new K8sDiscovery(config.k8s) : null;
+
+		k8s?.start();
+		stoppers.push(() => k8s?.stop());
+		central = new CentralView({ config, monitor, collector: () => collector, k8s });
+		http.route('GET', '/api/central/snapshot', () => ({ body: central!.snapshot() }));
+		central.start();
+		stoppers.push(() => central?.stop());
 
 		http.route('POST', '/api/liveness', async req => {
 			try {
@@ -149,10 +174,31 @@ async function main(): Promise<void> {
 			tracker.observe(collector.raw.current);
 		}
 	});
-	collector.on('batch', batch => writer.enqueue(batch));
-	collector.on('failure', row => writer.enqueueFailure(row));
+	const persist = (batch: Batch) => {
+		writer.enqueue(batch);
+		downsampled.forEach(fn => fn(batch));
+	};
+	let lastFailureSavedAt = 0;
+
+	collector.on('batch', batch => {
+		const merged = downsampler.add(batch);
+
+		if (merged) {
+			persist(merged);
+		}
+	});
+	collector.on('failure', row => {
+		// 1초 주기라 훅이 죽어 있으면 매초 실패한다. 실패 기록도 DB 기록 주기마다 한 번만 남긴다.
+		if (row.time.getTime() - lastFailureSavedAt >= config.dbWriteIntervalMs) {
+			lastFailureSavedAt = row.time.getTime();
+			writer.enqueueFailure(row);
+		}
+	});
 	collector.start();
-	http.fallback(staticHandler(config.webDir));
+
+	const serveStatic = staticHandler(config.webDir, { rootPage: config.mode === 'origin' ? 'central.html' : null });
+
+	http.fallback((req, res) => central?.handleStream(req, res) || serveStatic(req, res));
 	await http.listen(config.http.host, config.http.port);
 
 	const shutdown = async (signal: string) => {
@@ -162,6 +208,13 @@ async function main(): Promise<void> {
 		source.close();
 		await http.close().catch(() => {});
 		await Promise.all(flushers.map(flush => flush().catch(() => {})));
+
+		const rest = downsampler.flush();
+
+		if (rest) {
+			writer.enqueue(rest);
+		}
+
 		await writer.flush().catch(() => {});
 		await store.close().catch(() => {});
 		process.exit(0);

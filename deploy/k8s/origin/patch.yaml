@@ -8,6 +8,8 @@ metadata:
 spec:
   template:
     spec:
+      # 통합 3D 화면: k8s API로 노드·edge Pod 목록을 읽는다 (rbac.yaml). 빼도 동작한다 (노드 이름만 heartbeat로 앎).
+      serviceAccountName: msdash-discovery
       volumes:
         - name: msdash-hook
           configMap:
@@ -68,6 +70,10 @@ spec:
               value: "1000000000"
             - name: MSDASH_MOCK
               value: "1"
+            - name: MSDASH_K8S_DISCOVERY # 통합 3D 화면: 노드·Pod 자동 조회 (serviceAccountName 필요)
+              value: "1"
+            - name: MSDASH_K8S_EDGE_SELECTOR # edge Pod 라벨
+              value: app=mediasoup-edge
           ports:
             - name: dashboard
               containerPort: 18080

@@ -6,7 +6,8 @@ import type { RawHealth, RawSnapshot, RawTransportDetail } from '../hookProtocol
 export interface MediasoupSource {
 	readonly kind: 'hook' | 'sim';
 	health(): Promise<RawHealth>;
-	snapshot(): Promise<RawSnapshot>;
+	/** spreadMs: 훅이 getStats() 호출을 이 시간 동안 고르게 나눠 보낸다 (0 = 한꺼번에). */
+	snapshot(opts?: { spreadMs?: number }): Promise<RawSnapshot>;
 	transportDetail(transportId: string): Promise<RawTransportDetail>;
 	close(): void;
 }

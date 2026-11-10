@@ -66,6 +66,18 @@
 
 `:id`(broadcaster)는 `<roomId>/<peerId>@<시작 epoch초>` 형식이므로 URL 인코딩해서 넘긴다.
 
+## 통합 3D 화면 (origin)
+
+origin 대시보드의 첫 화면(`/`, `web/central.html`)이 쓴다. edge들이 1초마다 heartbeat에 실어 보내는 실시간 값(`live`)과 origin 수집값을 합친 것이다. DB를 읽지 않는다.
+
+| 경로 | 내용 |
+|---|---|
+| `GET /api/central/snapshot` | 현재 상태 한 번: `origin`(id·노드·송출자 수), `nodes`(노드별 CPU·qdisc drop(MOCK)·edge 목록), `edges`(상태·노드·Worker CPU 합·시청자 수·수집 1회 시간·건너뛴 주기), `viewers`(시청자 전체: edge·방송·loss(최근 5초)·RTT·레이어·freeze·fps·LATE(MOCK)), `history`(30분, 30초 간격 61칸: 노드 CPU·qdisc, edge CPU·시청자 수), `cluster`(k8s 조회 결과, 켰을 때만), `mockFields` |
+| `GET /api/central/stream` | SSE. 1초마다 위와 같은 형식을 보낸다 |
+
+- edge 상태: `connected` / `warning` / `stale`(1초 신호가 5초 이상 없음) / `lost`(edge_signal_age 경고 값, 기본 30초). `lost`인 edge의 시청자는 목록에서 뺀다. 10분 넘게 `lost`인 edge는 이 화면에서 숨긴다.
+- MOCK 항목은 [mock-data.md](mock-data.md).
+
 ## 알려진 한계
 
 - origin의 "대기(송출 없음)" broadcaster: producer가 하나도 없는 peer는 서버 코드 수정 없이는 viewer와 구분할 수 없다. producer가 있다가 bitrate가 0이 된 경우만 대기로 보인다.

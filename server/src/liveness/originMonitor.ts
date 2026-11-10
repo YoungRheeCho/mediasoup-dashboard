@@ -3,7 +3,7 @@ import type { MetricSample } from '../alerts/metrics.js';
 import type { OriginStore } from '../db/store.js';
 import { createLogger } from '../log.js';
 import { parseLivenessMessage } from './message.js';
-import type { LivenessMessage } from './message.js';
+import type { EdgeLive, LivenessMessage } from './message.js';
 
 const logger = createLogger('liveness');
 
@@ -31,7 +31,19 @@ type Known = {
 	region: string | null;
 	lastSeenAt: number | null;
 	last: LivenessMessage | null;
+	/** DB에 아직 쓰지 않은 pipe 수신 delta (신호는 1초마다 오지만 DB에는 HEARTBEAT_SAVE_MS마다 쓴다) */
+	unsaved: { lost: number; expected: number; hasPipe: boolean };
+	lastSavedAt: number | null;
+	lastSavedOk: boolean | null;
+	/** 상태 판단용 최근 pipe 수신 [expected, lost] (신호 LOSS_WINDOW개). 1초 신호 하나만 보면 패킷이 적어 값이 튄다. */
+	recent: Array<[number, number]>;
 };
+
+/** 상태 판단에 쓰는 pipe 수신 loss 구간: 최근 신호 10개 (1초 신호면 10초) */
+const LOSS_WINDOW = 10;
+
+/** edge_heartbeat 기록 간격. 신호는 1초마다 오지만 이력은 10초 간격이면 충분하다 (상태가 바뀌면 바로 쓴다). */
+const HEARTBEAT_SAVE_MS = 10_000;
 
 /** 신호 끊김 기준 기본값. alert_rule 'edge_signal_age'의 warn 값이 있으면 그것을 쓴다. */
 const DEFAULT_LOST_AFTER_S = 30;
@@ -63,6 +75,10 @@ export class OriginLivenessMonitor {
 				region: e.region,
 				lastSeenAt: e.lastHeartbeatAt?.getTime() ?? null,
 				last: null,
+				unsaved: { lost: 0, expected: 0, hasPipe: false },
+				lastSavedAt: null,
+				lastSavedOk: null,
+				recent: [],
 			});
 		}
 	}
@@ -99,14 +115,59 @@ export class OriginLivenessMonitor {
 			logger.info('new edge %s (%s, ip %s)', message.edgeId, message.dashboardUrl, message.ip ?? '-');
 		}
 
-		this.#known.set(message.edgeId, {
+		const unsaved = prev?.unsaved ?? { lost: 0, expected: 0, hasPipe: false };
+		const recent = prev?.recent ?? [];
+
+		if (message.recvPacketsExpected !== null && message.recvPacketsLost !== null) {
+			unsaved.lost += message.recvPacketsLost;
+			unsaved.expected += message.recvPacketsExpected;
+			unsaved.hasPipe = true;
+			recent.push([message.recvPacketsExpected, message.recvPacketsLost]);
+
+			while (recent.length > LOSS_WINDOW) {
+				recent.shift();
+			}
+		}
+
+		const known: Known = {
 			edgeId: message.edgeId,
 			dashboardUrl: message.dashboardUrl,
 			ip: message.ip,
 			region: message.region,
 			lastSeenAt: now,
 			last: message,
-		});
+			unsaved,
+			lastSavedAt: prev?.lastSavedAt ?? null,
+			lastSavedOk: prev?.lastSavedOk ?? null,
+			recent,
+		};
+
+		this.#known.set(message.edgeId, known);
+
+		// 1초 신호를 모두 DB에 쓰지 않는다: 처음, 10초마다, 상태(ok)가 바뀔 때, edge 정보가 바뀔 때만 쓴다.
+		const due =
+			changed ||
+			known.lastSavedAt === null ||
+			now - known.lastSavedAt >= HEARTBEAT_SAVE_MS ||
+			known.lastSavedOk !== message.ok;
+
+		if (!due) {
+			return;
+		}
+
+		const row = {
+			time: new Date(now),
+			edgeId: message.edgeId,
+			ok: message.ok,
+			rttMs: opts.rttMs ?? message.lastRttMs,
+			viewerCount: message.viewerCount,
+			recvPacketsLost: unsaved.hasPipe ? unsaved.lost : null,
+			recvPacketsExpected: unsaved.hasPipe ? unsaved.expected : null,
+		};
+
+		known.unsaved = { lost: 0, expected: 0, hasPipe: false };
+		known.lastSavedAt = now;
+		known.lastSavedOk = message.ok;
 
 		this.#persist = this.#persist
 			.then(async () => {
@@ -114,15 +175,7 @@ export class OriginLivenessMonitor {
 					await this.store.upsertEdge({ edgeId: message.edgeId, dashboardUrl: message.dashboardUrl, region: message.region, ip: message.ip });
 				}
 
-				await this.store.saveHeartbeat({
-					time: new Date(now),
-					edgeId: message.edgeId,
-					ok: message.ok,
-					rttMs: opts.rttMs ?? message.lastRttMs,
-					viewerCount: message.viewerCount,
-					recvPacketsLost: message.recvPacketsLost,
-					recvPacketsExpected: message.recvPacketsExpected,
-				});
+				await this.store.saveHeartbeat(row);
 			})
 			.catch(error => logger.warn('saving heartbeat of %s failed: %s', message.edgeId, (error as Error).message));
 	}
@@ -139,10 +192,8 @@ export class OriginLivenessMonitor {
 		return [...this.#known.values()]
 			.map(e => {
 				const ageSeconds = e.lastSeenAt === null ? null : (now - e.lastSeenAt) / 1000;
-				const loss =
-					e.last && e.last.recvPacketsExpected && e.last.recvPacketsLost !== null
-						? e.last.recvPacketsLost / e.last.recvPacketsExpected
-						: null;
+				const expected = e.recent.reduce((a, [x]) => a + x, 0);
+				const loss = expected > 0 ? e.recent.reduce((a, [, l]) => a + l, 0) / expected : null;
 				let state: EdgeLiveState = 'connected';
 				let reason: string | null = null;
 
@@ -171,6 +222,11 @@ export class OriginLivenessMonitor {
 				};
 			})
 			.sort((a, b) => a.edgeId.localeCompare(b.edgeId));
+	}
+
+	/** 통합 화면용: edge별 마지막 실시간 값 (live를 보내지 않는 옛 edge는 null). */
+	liveOf(edgeId: string): EdgeLive | null {
+		return this.#known.get(edgeId)?.last?.live ?? null;
 	}
 
 	/** 주기적으로 신호 나이를 알림 평가기에 넘긴다 (edge_signal_age 규칙). */

@@ -816,6 +816,16 @@ curl http://192.0.2.10:18080/api/origin/edges  # edge 등록·상태
 
 ---
 
+### 11.4 1초 주기와 통합 3D 화면 (2026-11-10)
+
+- **수집 1초, DB 10초.** `MSDASH_COLLECT_INTERVAL_MS` 기본값을 1000으로 바꿨다. 메모리 최신값(`collector.latest`)은 1초마다 바뀌고, DB 기록과 알림 평가는 1초 묶음 10개를 합친 묶음으로 한다(`server/src/db/downsample.ts`). 합친 묶음은 예전 10초 수집과 같은 값이 되도록 delta는 더하고 순간값은 평균/마지막 값을 쓴다(단위 테스트 `test/central.test.ts`가 10초 한 번 수집과 같음을 확인).
+- **훅 페이싱.** 사이드카가 `snapshot` 요청에 `spreadMs`(기본 수집 주기의 60%)를 보내면 훅이 getStats 호출 시작을 그 시간 동안 고르게 나눈다(`createLimitedCaller`의 `gapMs`). 옛 훅은 이 값을 무시하고 예전처럼 동작한다. **훅 ConfigMap 갱신 + mediasoup 서버 재시작이 필요하다.**
+- **부하 측정은 아직 안 했다.** 시청자 수를 늘리며 `수집 1회 시간`, `건너뛴 주기`, `이벤트 루프 지연`을 본다. 통합 화면의 edge 상세 패널과 `/api/central/snapshot`의 `edges[].collectMs/skippedCycles/eventLoopLagMs`에 나온다. 한 주기 안에 못 끝내면 다음 주기를 건너뛰므로 서버가 멈추지는 않고 갱신 간격이 늘어난다.
+- **edge → origin 1초 신호.** `MSDASH_HEARTBEAT_INTERVAL_MS` 기본 1000. 신호에 `live`(노드 이름, 노드 CPU, Worker CPU 합, 시청자 목록과 최근 값)가 실린다. origin은 메모리에 두고, `edge_heartbeat` DB 기록은 10초마다(상태가 바뀌면 즉시) 한다. 상태 판단의 pipe 수신 loss는 최근 신호 10개로 낸다. 요청 크기 제한을 4MB로 늘렸다.
+- **통합 3D 화면.** origin `/`(= `web/central.html`, Vite 멀티 페이지). three.js는 npm 패키지로 번들한다(클러스터에서 인터넷 불필요). 기존 화면은 `/overview` 등 그대로. 시청자 입장은 1초 안에 잡혀 origin → edge → 시청자 애니메이션으로, 퇴장은 모니터가 사라지는 것으로 보인다. 중계 서버 수가 바뀌면 페이지가 장면을 다시 만든다.
+- **노드·Pod 자동 조회(선택).** `MSDASH_K8S_DISCOVERY=1` + `deploy/k8s/origin/rbac.yaml`(ServiceAccount `msdash-discovery`, nodes·pods 읽기). 안 켜면 각 Pod의 `NODE_NAME`(Downward API)으로만 노드를 묶는다. 한 노드에 edge가 여러 개면 edge `MSDASH_SERVER_ID`를 Pod 이름으로 둔다(`deploy/k8s/edge/patch.yaml`).
+- **MOCK 목록:** [mock-data.md](mock-data.md). 새로 생긴 MOCK은 LATE 비율(C1), qdisc drop(C2), 배정 사유(C3).
+
 ## 12. 검증 이력 요약
 
 | 단계 | 확인한 것 |
