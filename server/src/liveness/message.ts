@@ -46,6 +46,11 @@ export type EdgeLiveViewer = {
 	clientReported: boolean;
 	freezeCount: number | null;
 	fps: number | null;
+	/**
+	 * 지금 영상이 멈춰 있는지 (브라우저 보고가 있을 때만 판단, mock이면 늘 false).
+	 * 이번 수집 구간에 freeze 횟수가 늘었거나 fps가 1 미만이면 true, 그 뒤 FREEZE_HOLD_MS 동안 유지.
+	 */
+	freezing: boolean;
 };
 
 export type EdgeLive = {
@@ -144,6 +149,7 @@ function parseLive(input: unknown): EdgeLive | null {
 				clientReported: v.clientReported === true,
 				freezeCount: optNum(v.freezeCount),
 				fps: optNum(v.fps),
+				freezing: v.freezing === true,
 			})),
 	};
 }

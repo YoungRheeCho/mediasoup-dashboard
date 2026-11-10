@@ -205,6 +205,28 @@ test('origin: 1s heartbeats are saved every 10s with summed pipe deltas; central
 	assert.equal(central.snapshot(18_000).edges[0]!.state, 'stale', '7s without 1s heartbeat');
 });
 
+test('freezing: only real browser reports, set by a freeze or fps≈0, held for 2s', () => {
+	const config = loadConfig({ MSDASH_SERVER_ID: 'edge-a' });
+	const source = new EdgeLivenessSource(config, () => ({ ok: true, lastSuccessAt: new Date(), lastAttemptAt: new Date(), lastError: null, consecutiveFailures: 0, skippedCycles: 0, lastDurationMs: 1, source: 'sim' }));
+	const row = (t: number, over: Partial<EdgeBatch['viewerSamples'][number]>) => ({
+		time: new Date(t), viewerId: 'v1', roomId: 'r', workerIdx: 0, packetsExpected: 100, packetsLost: 0, nackCount: 0, packetsRetransmitted: 0,
+		rttMs: 20, bitrateBps: 1e6, spatialLayer: 2, temporalLayer: 2, transportState: 'connected',
+		clientReported: true, clientFreezeCount: 0, clientFreezeMs: 0, clientFps: 30, clientJitterBufferMs: 40, clientFramesDropped: 0, ...over,
+	});
+	const at = (t: number, over: Partial<EdgeBatch['viewerSamples'][number]> = {}) => {
+		source.addBatch({ mode: 'edge', time: new Date(t), rooms: ['r'], collector: { time: new Date(t), hookOk: true, collectDurationMs: 1, collectSkipped: false, eventLoopLagMs: 0, nodeRssBytes: null, hostCpuPct: 10 }, workers: [], roomSamples: [], pipeSamples: [], viewerSamples: [row(t, over)], viewerSessionStarts: [], viewerSessionEnds: [] });
+
+		return source.live!.viewers[0]!.freezing;
+	};
+
+	assert.equal(at(0), false);
+	assert.equal(at(1000, { clientFps: 0 }), true, 'fps 0 while frozen');
+	assert.equal(at(2000), true, 'held');
+	assert.equal(at(3100), false, 'released after 2s');
+	assert.equal(at(4000, { clientFreezeCount: 1 }), true, 'a freeze just ended');
+	assert.equal(at(7000, { clientReported: false, clientFreezeCount: 3, clientFps: 0 }), false, 'mock values never show freeze');
+});
+
 test('LATE mock is stable per viewer and rises with loss', () => {
 	assert.equal(mockLatePct('abc', 0), mockLatePct('abc', 0));
 	assert.ok(mockLatePct('abc', 0.02) > mockLatePct('abc', 0));

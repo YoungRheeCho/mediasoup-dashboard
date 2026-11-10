@@ -7,6 +7,12 @@ import type { EdgeLive, EdgeLiveViewer, LivenessMessage } from './message.js';
 const logger = createLogger('liveness');
 
 /**
+ * freeze 판단을 이만큼 유지한다. 브라우저 freezeCount는 멈춘 영상이 다시 그려질 때(끝날 때) 늘고,
+ * 보고는 1초 주기라 판단이 한 박자 늦다. 짧게 끊겼다 이어지는 깜빡임을 막는 여유이기도 하다.
+ */
+const FREEZE_HOLD_MS = 2000;
+
+/**
  * edge 쪽 생존 신호 내용을 만든다. pipe 수신 delta는 신호 사이에 쌓아 두었다가 보낼 때 비운다.
  * push든 pull이든 take()를 한 곳에서만 부르므로 delta가 두 번 세지지 않는다.
  */
@@ -18,7 +24,7 @@ export class EdgeLivenessSource {
 	#lastRttMs: number | null = null;
 	/** 통합 화면용: viewer 세션 정보와 최근 값 (세션 종료 시 지운다) */
 	readonly #sessions = new Map<string, { roomId: string; name: string | null; nameMock: boolean; connectedAt: number | null }>();
-	readonly #recent = new Map<string, { window: Array<[number, number]>; freezeCount: number | null; row: EdgeBatch['viewerSamples'][number] }>();
+	readonly #recent = new Map<string, { window: Array<[number, number]>; freezeCount: number | null; freezeUntil: number; row: EdgeBatch['viewerSamples'][number] }>();
 	#live: EdgeLive | null = null;
 
 	constructor(
@@ -72,7 +78,7 @@ export class EdgeLivenessSource {
 		for (const row of batch.viewerSamples) {
 			seen.add(row.viewerId);
 
-			const r = this.#recent.get(row.viewerId) ?? { window: [], freezeCount: null, row };
+			const r = this.#recent.get(row.viewerId) ?? { window: [], freezeCount: null, freezeUntil: 0, row };
 
 			r.row = row;
 
@@ -86,6 +92,12 @@ export class EdgeLivenessSource {
 
 			if (row.clientFreezeCount !== null) {
 				r.freezeCount = (r.freezeCount ?? 0) + row.clientFreezeCount;
+			}
+
+			// 실제 브라우저 보고만 본다 (mock 값으로 화면에 freeze를 띄우지 않는다).
+			// 진행 중인 freeze는 fps가 0으로 떨어지는 것으로, 막 끝난 freeze는 횟수 증가로 잡는다.
+			if (row.clientReported && ((row.clientFreezeCount ?? 0) > 0 || (row.clientFreezeMs ?? 0) > 0 || (row.clientFps !== null && row.clientFps < 1))) {
+				r.freezeUntil = row.time.getTime() + FREEZE_HOLD_MS;
 			}
 
 			this.#recent.set(row.viewerId, r);
@@ -119,6 +131,7 @@ export class EdgeLivenessSource {
 				clientReported: r.row.clientReported,
 				freezeCount: r.freezeCount,
 				fps: r.row.clientFps,
+				freezing: r.row.clientReported && batch.time.getTime() < r.freezeUntil,
 			});
 		}
 

@@ -55,6 +55,8 @@ export type CentralViewer = {
 	freezeCount: number | null;
 	fps: number | null;
 	clientReported: boolean;
+	/** 지금 영상이 멈춰 있음 (브라우저 보고가 있는 시청자만) → 3D에서 연결선이 끊어진다 */
+	freezing: boolean;
 	/** MOCK (C1) */
 	latePct: number;
 };
@@ -225,6 +227,7 @@ export class CentralView {
 					freezeCount: v.freezeCount,
 					fps: v.fps === null ? null : round(v.fps, 1),
 					clientReported: v.clientReported,
+					freezing: v.freezing === true,
 					latePct: mockLatePct(v.id, v.lossRatio),
 				});
 			}

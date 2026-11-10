@@ -20,7 +20,7 @@
 | # | 항목 | 통합 3D 화면에서 | 언제 실제 값이 되나 |
 |---|---|---|---|
 | M1 | 시청자 이름·peerId·브라우저 | 이름 옆 `MOCK` (해당 시청자만) | mediasoup-demo 서버가 transport `appData`에 `peerId`를 넣으면 (한 줄 수정) |
-| M2 | freeze 횟수·시간, fps, jitter buffer, dropped frames, 해상도·재생 상태 | 상세 패널 Freeze 옆 `MOCK` (보고 없는 시청자만) | 시청자 브라우저가 `reportClientStats`를 보내면 그 시청자는 실제 값. `fec-merged` 브랜치 클라이언트에 이미 있음. Safari·Firefox는 freeze 값을 주지 않는다 |
+| M2 | freeze 횟수·시간, fps, jitter buffer, dropped frames, 해상도·재생 상태 | 상세 패널 Freeze·fps 옆 `MOCK` (보고 없는 시청자만). **freeze 표시(연결선 사라짐·빨간 깜빡임)는 실제 보고가 있는 시청자만** 한다(mock 값으로는 표시하지 않음). 판단: 이번 수집 구간에 freeze 횟수 증가 또는 fps < 1 → 2초 유지 | 시청자 브라우저가 `reportClientStats`를 보내면 그 시청자는 실제 값. `fec-merged` 브랜치 클라이언트에 이미 있음. Safari·Firefox는 freeze 값을 주지 않는다 |
 | M3 | 네트워크 종류(wifi/LTE) | 쓰지 않음 (화면에서 숨김) | 클라이언트가 `navigator.connection`을 보고에 담으면 (Chrome 계열만) |
 | M4 | user agent 원문, 모바일/PC 구분 | 쓰지 않음 | 서버가 WS 헤더의 user-agent를 저장하면 |
 | M5 | 접속 종료 사유 | 쓰지 않음 | 서버가 Peer 종료 사유를 내보내면 (`transport_failed`만 지금도 실제) |
@@ -28,6 +28,12 @@
 | M10 | Pipe 화면 origin 측 비교값 | 쓰지 않음 (기존 화면에서도 미구현) | heartbeat 응답에 origin 송신 통계를 담으면 |
 
 ## 3. 실제 값이지만 이름과 뜻이 조금 다른 것 (MOCK 아님, 해석 주의)
+
+| 3D 표현 | 데이터 | 비고 |
+|---|---|---|
+| 연결선 빛 입자 양·속도 | 시청자 수신 비트레이트 (서버 실측, 1초) | 150 kbps 이하 1개 ~ 4 Mbps 이상 6개, 로그 눈금 |
+| 모니터 화질 (선명 / 흐림 / 모자이크) | 수신 레이어 L2 / L1 / L0 (서버 실측) | |
+| 연결선·빛 사라짐 + 시청자 빨간 깜빡임 + 멈춘 화면 | freeze (브라우저 보고) | 위 M2 참고. 보고 주기가 5초면 늦게 보인다 → 클라이언트 보고 주기 1초 권장 |
 
 | 항목 | 화면 표기 | 실제로 재는 것 |
 |---|---|---|
