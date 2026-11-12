@@ -1,0 +1,69 @@
+/* 통합 3D 화면 아래 상세 패널 (시안 121: 배치 012 아래 시트 + 색 002 그래파이트). panel.js가 만든 마크업용 */
+:root{--acc:#7aa2ff;--acc2:#c792ea;--ok:#4ade80;--card:rgba(255,255,255,.035);--r:16px}
+
+/* 아래 시트: 장면 아래쪽에 가로로 넓게, 6칸 격자 */
+#detail.sheet{left:16px;right:16px;bottom:14px;width:auto;max-height:46vh;overflow:auto;scrollbar-width:thin;padding:14px 16px;border-radius:var(--r);z-index:25}
+#detail.sheet .k-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+#detail.sheet .k-head h2{margin:0;font-size:17px;display:flex;align-items:center;gap:8px}
+#detail.sheet .k-head h2 i{width:11px;height:11px;border-radius:4px;background:var(--c,var(--acc));box-shadow:0 0 10px var(--c,var(--acc))}
+#detail.sheet .k-head>div:first-child{min-width:0}
+#detail.sheet .k-x{white-space:nowrap;flex-shrink:0;border:1px solid var(--line);background:transparent;border-radius:10px;padding:4px 11px;font-size:11px;font-weight:700;color:var(--muted)}
+#detail.sheet .k-x:hover{color:var(--ink);border-color:var(--acc)}
+#detail.sheet .k-body{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;align-items:stretch}
+#detail.sheet .k-body>.k-sec{grid-column:span var(--span,2);margin:0}
+body.has-sel #scene .legend{opacity:0;pointer-events:none;transition:opacity .2s}
+
+.k-sec{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;min-width:0}
+.k-sec h4{margin:0 0 7px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.03em;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.k-sec h4 em{font-style:normal;font-weight:700;font-size:10.5px;color:var(--ink)}
+.k-chart{display:block;width:100%;overflow:visible}
+.k-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:5px}
+.k-legend span{display:inline-flex;align-items:center;gap:5px}
+.k-legend i{width:12px;height:3px;border-radius:2px;background:var(--c)}
+.k-legend i.box{height:8px;width:8px;border-radius:2px}
+.k-axis{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;color:var(--muted);margin-top:3px}
+.k-gauges{display:grid;grid-template-columns:repeat(var(--gc,3),minmax(0,1fr));gap:6px;text-align:center}
+.k-gauges figure{margin:0}
+.k-gauges figcaption{font-size:10.5px;font-weight:700;color:var(--muted);margin-top:-4px}
+.k-live{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:var(--ok);letter-spacing:.06em}
+.k-live::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:kblink 1.4s infinite}
+@keyframes kblink{50%{opacity:.25}}
+
+/* 그래프 글자: 가로로 늘어나는 SVG 밖에 HTML로 */
+.k-cw{position:relative}
+.k-cw .k-yl{position:absolute;left:2px;top:0;font-size:9px;font-weight:700;color:var(--muted);pointer-events:none;line-height:1}
+.k-cw .k-thl{position:absolute;right:2px;font-size:9.5px;font-weight:800;pointer-events:none;line-height:1;text-shadow:0 0 3px #000}
+/* 마우스 값 */
+.k-cw[data-tip]{cursor:crosshair}
+.k-cw .k-tipl{position:absolute;top:0;bottom:0;width:1px;background:var(--ink);opacity:0;pointer-events:none}
+.k-cw .k-tip{position:absolute;top:-6px;transform:translateY(-100%);min-width:120px;padding:6px 8px;border-radius:8px;background:rgba(10,12,16,.94);border:1px solid var(--line);font-size:11px;line-height:1.5;color:var(--ink);pointer-events:none;opacity:0;z-index:5;white-space:nowrap}
+.k-cw .k-tip span{display:flex;align-items:center;gap:5px}
+.k-cw .k-tip i{width:8px;height:2px;border-radius:1px;display:inline-block}
+.k-cw .k-tip>b{display:block;color:var(--muted);font-size:10px}
+.k-cw.tip-on .k-tip{opacity:1}
+.k-cw.tip-on .k-tipl{opacity:.35}
+
+/* 숫자 카드 (origin·송출자) */
+.k-stats{display:grid;gap:6px;margin-top:2px}
+.k-stats>div{display:flex;align-items:baseline;justify-content:space-between;padding:5px 10px;border-radius:9px;background:var(--card);border:1px solid var(--line)}
+.k-stats span{font-size:11px;font-weight:700;color:var(--muted)}
+.k-stats span i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.k-stats b{font-size:19px;font-weight:800}
+.k-stats small{font-size:11px;color:var(--muted);margin-left:2px}
+.k-osel{cursor:pointer;transition:border-color .15s,background .15s}
+.k-osel:hover{border-color:var(--acc)!important}
+.k-stats>.k-osel.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.k-mini{margin-left:8px;font:inherit;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;vertical-align:1px}
+.k-mini:hover{color:var(--ink);border-color:var(--acc)}
+.k-mini.on{color:var(--acc);border-color:var(--acc)}
+
+/* 3D 라벨: CPU 경고·위험 */
+.lbl.edge-l.cpu-warn{border-color:#ffb547;box-shadow:0 0 14px #ffb54766}
+.lbl.edge-l.cpu-bad{border-color:#ff4d6d;animation:cpuBad .6s steps(2) infinite}
+@keyframes cpuBad{0%{box-shadow:0 0 18px #ff4d6dcc}100%{box-shadow:0 0 4px #ff4d6d33}}
+
+@media(max-width:900px){
+  #detail.sheet{left:8px;right:8px;bottom:8px;max-height:70vh}
+  #detail.sheet .k-body{grid-template-columns:1fr}
+  #detail.sheet .k-body>.k-sec{grid-column:auto}
+}

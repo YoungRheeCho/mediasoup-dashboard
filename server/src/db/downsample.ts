@@ -18,7 +18,7 @@ import type {
  * 그래서 메모리의 최신값(collector.latest)은 1초마다 바뀌고, DB 기록과 알림 평가는 합친 묶음으로 한다.
  * 합친 묶음은 예전 10초 수집 한 번과 같은 의미가 되도록 만든다.
  *  - delta 칸(packets*, nack, pli, freeze 횟수·시간, dropped)은 더한다.
- *  - 순간 속도(bitrate, cpu)는 평균, 상태값(rtt, layer, state, fps)은 마지막 값.
+ *  - 순간 속도(bitrate, cpu)는 평균(bitrate는 DB 칸이 정수라 반올림), 상태값(rtt, layer, state, fps)은 마지막 값.
  *  - 세션 시작·종료, 링크 상태 변화는 순서대로 모두 넘긴다.
  */
 export class BatchDownsampler {
@@ -94,7 +94,7 @@ function mergeEdge(list: EdgeBatch[]): EdgeBatch {
 			(rows): EdgeRoomSampleRow => {
 				const l = rows[rows.length - 1]!;
 
-				return { ...l, time: last.time, outBitrateBps: avg(rows.map(r => r.outBitrateBps)), inBitrateBps: avg(rows.map(r => r.inBitrateBps)) };
+				return { ...l, time: last.time, outBitrateBps: avgInt(rows.map(r => r.outBitrateBps)), inBitrateBps: avgInt(rows.map(r => r.inBitrateBps)) };
 			},
 			last.time
 		),
@@ -112,7 +112,7 @@ function mergeEdge(list: EdgeBatch[]): EdgeBatch {
 					packetsRepaired: sum(rows.map(r => r.packetsRepaired)),
 					nackCount: sum(rows.map(r => r.nackCount)),
 					pliCount: sum(rows.map(r => r.pliCount)),
-					bitrateBps: avg(rows.map(r => r.bitrateBps)),
+					bitrateBps: avgInt(rows.map(r => r.bitrateBps)),
 					rttMs: lastValue(rows.map(r => r.rttMs)),
 					jitterMs: lastValue(rows.map(r => r.jitterMs)),
 				};
@@ -132,7 +132,7 @@ function mergeEdge(list: EdgeBatch[]): EdgeBatch {
 					packetsLost: sum(rows.map(r => r.packetsLost)),
 					nackCount: sum(rows.map(r => r.nackCount)),
 					packetsRetransmitted: sum(rows.map(r => r.packetsRetransmitted)),
-					bitrateBps: avg(rows.map(r => r.bitrateBps)),
+					bitrateBps: avgInt(rows.map(r => r.bitrateBps)),
 					rttMs: lastValue(rows.map(r => r.rttMs)),
 					spatialLayer: lastValue(rows.map(r => r.spatialLayer)),
 					temporalLayer: lastValue(rows.map(r => r.temporalLayer)),
@@ -170,7 +170,7 @@ function mergeOrigin(list: OriginBatch[]): OriginBatch {
 				return {
 					...l,
 					time: last.time,
-					bitrateBps: avg(rows.map(r => r.bitrateBps)),
+					bitrateBps: avgInt(rows.map(r => r.bitrateBps)),
 					fps: lastValue(rows.map(r => r.fps)),
 					packetsExpected: sum(rows.map(r => r.packetsExpected)),
 					packetsLost: sum(rows.map(r => r.packetsLost)),
@@ -192,7 +192,7 @@ function mergeOrigin(list: OriginBatch[]): OriginBatch {
 			(rows): OriginRoomSampleRow => {
 				const l = rows[rows.length - 1]!;
 
-				return { ...l, time: last.time, outPipeBitrateBps: avg(rows.map(r => r.outPipeBitrateBps)) };
+				return { ...l, time: last.time, outPipeBitrateBps: avgInt(rows.map(r => r.outPipeBitrateBps)) };
 			},
 			last.time
 		),
@@ -210,7 +210,7 @@ function mergeOrigin(list: OriginBatch[]): OriginBatch {
 					packetsLost: sum(rows.map(r => r.packetsLost)),
 					nackCount: sum(rows.map(r => r.nackCount)),
 					pliCount: sum(rows.map(r => r.pliCount)),
-					bitrateBps: avg(rows.map(r => r.bitrateBps)),
+					bitrateBps: avgInt(rows.map(r => r.bitrateBps)),
 					rttMs: lastValue(rows.map(r => r.rttMs)),
 				};
 			},
@@ -281,6 +281,13 @@ function avg(values: Array<number | null>): number | null {
 	const nums = values.filter((v): v is number => v !== null);
 
 	return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
+}
+
+/** 정수 칸(bigint, 예: bitrate)용 평균. DB가 소수를 받지 않는다. */
+function avgInt(values: Array<number | null>): number | null {
+	const v = avg(values);
+
+	return v === null ? null : Math.round(v);
 }
 
 function max(values: Array<number | null>): number | null {

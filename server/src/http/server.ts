@@ -75,6 +75,13 @@ export class HttpServer {
 		});
 	}
 
+	/** 실제로 열린 포트 (listen에 0을 줬을 때 확인용) */
+	get port(): number | null {
+		const addr = this.#server.address();
+
+		return addr && typeof addr === 'object' ? addr.port : null;
+	}
+
 	close(): Promise<void> {
 		return new Promise(resolve => this.#server.close(() => resolve()));
 	}

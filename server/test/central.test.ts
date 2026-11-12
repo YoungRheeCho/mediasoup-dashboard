@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { AlertEvaluator } from '../src/alerts/evaluator.js';
 import { CentralView, mockLatePct } from '../src/central/central.js';
+import { SysinfoStore } from '../src/central/sysinfo.js';
 import type { Collector } from '../src/collector/collector.js';
 import { EdgeNormalizer } from '../src/collector/normalizeEdge.js';
 import type { CycleContext } from '../src/collector/types.js';
@@ -87,6 +88,23 @@ test('downsample: ten 1s batches merge into one batch equal to a single 10s delt
 		assert.equal(m.packetsExpected, row.packetsExpected);
 		assert.equal(m.packetsLost, row.packetsLost);
 	}
+
+	// bigint 칸: 평균을 내도 정수여야 DB가 받는다 ("invalid input syntax for type bigint")
+	const odd = [batches[1]!, batches[2]!].map((b, i) => structuredClone({
+		...b,
+		viewerSamples: b.viewerSamples.map(r => ({ ...r, bitrateBps: 1000 + i })),
+		pipeSamples: b.pipeSamples.map(r => ({ ...r, bitrateBps: 2000 + i })),
+		roomSamples: b.roomSamples.map(r => ({ ...r, outBitrateBps: 3000 + i, inBitrateBps: 4000 + i })),
+	}));
+	const two = mergeBatches(odd) as EdgeBatch;
+	const bps = [
+		...two.viewerSamples.map(r => r.bitrateBps),
+		...two.pipeSamples.map(r => r.bitrateBps),
+		...two.roomSamples.flatMap(r => [r.outBitrateBps, r.inBitrateBps]),
+	];
+
+	assert.ok(bps.length > 0);
+	assert.ok(bps.every(v => Number.isInteger(v)), `bitrate averages are integers: ${bps.slice(0, 4).join(',')}`);
 
 	assert.equal(merged.workers.length, ten.workers.length);
 	assert.equal(merged.viewerSessionStarts.length, batches.slice(1).reduce((a, b) => a + b.viewerSessionStarts.length, 0));
@@ -199,10 +217,55 @@ test('origin: 1s heartbeats are saved every 10s with summed pipe deltas; central
 	assert.equal(snap.viewers[0]!.lossPct, 1);
 	assert.ok(snap.viewers[0]!.nameMock, 'no name from edge → generated name, flagged');
 	assert.deepEqual(snap.nodes.map(n => [n.name, n.edgeIds, n.hasOrigin]), [['node-1', ['edge-a', 'edge-b'], true]]);
-	assert.equal(snap.history.points, 61);
-	assert.equal(snap.history.edges['edge-a']!.cpu.length, 61);
-	assert.ok('viewer.latePct' in snap.mockFields && 'node.qdiscDropPerSec' in snap.mockFields);
+	assert.deepEqual(snap.nodes.map(n => n.viewerCount), [3], 'node viewers = sum of its edges');
+	assert.ok(!('history' in snap), '1s stream carries no history');
+
+	// 이력: 1초 간격 1800칸, 마지막 칸 = 지금. 시청자 이력은 ?viewer=로 하나만
+	central.sample(10_000);
+	central.sample(11_000);
+	const hist = central.history(11_000, 'va1');
+
+	assert.equal(hist.points, 1800);
+	assert.equal(hist.endSec, 11);
+	assert.equal(hist.edges['edge-a']!.cpu.length, 1800);
+	assert.deepEqual(hist.edges['edge-a']!.viewers.slice(-3), [null, 2, 2]);
+	assert.deepEqual(hist.edges['edge-a']!.egressBps.slice(-1), [2e6], 'egress = sum of viewer bitrates');
+	assert.deepEqual(hist.nodes['node-1']!.viewers.slice(-1), [3]);
+	assert.deepEqual(Object.keys(hist.viewers), ['va1']);
+	assert.deepEqual(hist.viewers['va1']!.loss.slice(-1), [1]);
+	assert.deepEqual(Object.keys(central.history(11_000).viewers), []);
+	assert.ok('viewer.latePct' in snap.mockFields && !('node.qdiscDropPerSec' in snap.mockFields), 'qdisc is no longer mocked');
 	assert.equal(central.snapshot(18_000).edges[0]!.state, 'stale', '7s without 1s heartbeat');
+
+	// 수집기 없음 → 사이드카 값 (worker CPU, /proc/stat), qdisc·throttle 없음
+	assert.equal(snap.resourceSource, 'sidecar');
+	assert.deepEqual([snap.edges[0]!.cpuPct, snap.edges[0]!.throttledMs], [20, null]);
+	assert.deepEqual([snap.nodes[0]!.cpuPct, snap.nodes[0]!.qdiscDropPerSec], [50, null]);
+
+	// 수집기가 보내면 그 값만 쓴다. pod 이름 = edge id. 수집기에 없는 edge는 null (worker CPU로 바꿔 끼우지 않음)
+	const sysinfo = new SysinfoStore();
+
+	sysinfo.receive({
+		nodes: [{ name: 'node-1', cpuPct: 71.3, cpuPeakPct: 92, qdiscDropsPerSec: 4, ageMs: 200 }, { name: 'node-2', cpuPct: 5, qdiscDropsPerSec: 0, ageMs: 200 }],
+		pods: [{ name: 'edge-a', node: 'node-1', cpuPct: 104.2, cpuPeakPct: 130.5, throttledMs: 35, throttledPct: 12.5, ageMs: 300 }],
+	}, 11_000);
+
+	const withSys = new CentralView({ config, monitor, collector: () => collector, k8s: null, sysinfo }).snapshot(11_000);
+
+	assert.equal(withSys.resourceSource, 'collector');
+	assert.deepEqual(withSys.edges.map(e => [e.id, e.cpuPct, e.workerCpuPct, e.throttledMs, e.throttledPct]), [
+		['edge-a', 104.2, 20, 35, 12.5],
+		['edge-b', null, 20, null, null],
+	]);
+	assert.deepEqual(withSys.nodes.map(n => [n.name, n.cpuPct, n.qdiscDropPerSec]), [['node-1', 71.3, 4], ['node-2', 5, 0]], 'collector-only nodes are listed too');
+	assert.deepEqual(withSys.edges.map(e => e.cpuPeakPct), [130.5, null], 'CPU max = max of 0.1s values in that second (collector only)');
+	assert.deepEqual(withSys.nodes.map(n => n.cpuPeakPct), [92, null], 'old collector without cpuPeakPct → null');
+
+	// 수집기가 끊기면 값은 null, 출처는 그대로 collector
+	const gone = new CentralView({ config, monitor, collector: () => collector, k8s: null, sysinfo }).snapshot(20_000);
+
+	assert.equal(gone.resourceSource, 'collector');
+	assert.equal(gone.nodes.find(n => n.name === 'node-1')!.cpuPct, null);
 });
 
 test('freezing: only real browser reports, set by a freeze or fps≈0, held for 2s', () => {

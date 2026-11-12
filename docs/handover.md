@@ -824,7 +824,8 @@ curl http://192.0.2.10:18080/api/origin/edges  # edge 등록·상태
 - **edge → origin 1초 신호.** `MSDASH_HEARTBEAT_INTERVAL_MS` 기본 1000. 신호에 `live`(노드 이름, 노드 CPU, Worker CPU 합, 시청자 목록과 최근 값)가 실린다. origin은 메모리에 두고, `edge_heartbeat` DB 기록은 10초마다(상태가 바뀌면 즉시) 한다. 상태 판단의 pipe 수신 loss는 최근 신호 10개로 낸다. 요청 크기 제한을 4MB로 늘렸다.
 - **통합 3D 화면.** origin `/`(= `web/central.html`, Vite 멀티 페이지). three.js는 npm 패키지로 번들한다(클러스터에서 인터넷 불필요). 기존 화면은 `/overview` 등 그대로. 시청자 입장은 1초 안에 잡혀 origin → edge → 시청자 애니메이션으로, 퇴장은 모니터가 사라지는 것으로 보인다. 중계 서버 수가 바뀌면 페이지가 장면을 다시 만든다.
 - **노드·Pod 자동 조회(선택).** `MSDASH_K8S_DISCOVERY=1` + `deploy/k8s/origin/rbac.yaml`(ServiceAccount `msdash-discovery`, nodes·pods 읽기). 안 켜면 각 Pod의 `NODE_NAME`(Downward API)으로만 노드를 묶는다. 한 노드에 edge가 여러 개면 edge `MSDASH_SERVER_ID`를 Pod 이름으로 둔다(`deploy/k8s/edge/patch.yaml`).
-- **MOCK 목록:** [mock-data.md](mock-data.md). 새로 생긴 MOCK은 LATE 비율(C1), qdisc drop(C2), 배정 사유(C3).
+- **MOCK 목록:** [mock-data.md](mock-data.md). 새로 생긴 MOCK은 LATE 비율(C1), 배정 사유(C3). qdisc drop(C2)은 2026-11-12에 실제 값이 됐다.
+- **CPU·qdisc·throttle = Metric-Collector.** 수집기가 1초마다 `POST /api/central/sysinfo`로 보낸 값을 통합 3D 화면에 쓴다(`snapshot.resourceSource: 'collector'`). edge CPU = 컨테이너 CPU(한도 대비, pod 이름 = edge `MSDASH_SERVER_ID`로 맞춤), 노드 CPU = 노드 /proc/stat, qdisc drop, CPU throttle(랙 빨간 파동 + 라벨 강조). 수집기가 한 번도 안 보냈으면 예전 값(worker CPU 합, 사이드카 /proc/stat)을 쓰고(`'sidecar'`), 보내다 끊기면 값은 "—"(null).
 
 ## 12. 검증 이력 요약
 
