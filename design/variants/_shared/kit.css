@@ -1,0 +1,140 @@
+/* 선택 패널 시안 공통 스타일. 색은 테마가 정하는 변수(--glass, --ink, --muted, --line, --acc ...)만 쓴다. */
+:root{--acc:#2cd9ff;--acc2:#a78bfa;--ok:#01b574;--warn:#ffb547;--bad:#ff4d6d;--card:rgba(255,255,255,.04);--grid:#ffffff14;--axis:#ffffff26;--r:16px;--font-num:inherit}
+#detail{transition:opacity .2s,transform .25s;z-index:25}
+body[data-sel] #scene .legend{opacity:0;pointer-events:none;transition:opacity .2s}
+#detail .k-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+#detail .k-head h2{margin:0;font-size:17px;display:flex;align-items:center;gap:8px;letter-spacing:-.01em}
+#detail .k-head h2 i{width:11px;height:11px;border-radius:4px;background:var(--c,var(--acc));box-shadow:0 0 10px var(--c,var(--acc))}
+#detail .k-head .sub{margin-top:2px}
+#detail .k-head>div:first-child{min-width:0}
+#detail .k-x{white-space:nowrap;flex-shrink:0;border:1px solid var(--line);background:transparent;border-radius:10px;padding:4px 11px;font-size:11px;font-weight:700;color:var(--muted)}
+#detail .k-x:hover{color:var(--ink);border-color:var(--acc)}
+.k-pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:10.5px;font-weight:800;letter-spacing:.02em;background:color-mix(in srgb,var(--pc,var(--ok)) 18%,transparent);color:var(--pc,var(--ok));border:1px solid color-mix(in srgb,var(--pc,var(--ok)) 45%,transparent)}
+.k-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+.k-sec{background:var(--card);border:1px solid var(--line);border-radius:calc(var(--r) - 4px);padding:11px 12px;min-width:0}
+.k-sec+.k-sec{margin-top:8px}
+.k-sec h4{margin:0 0 7px;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.03em;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.k-sec h4 b{color:var(--ink);font-size:12px}
+.k-sec h4 em{font-style:normal;font-weight:700;font-size:10.5px}
+.k-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:7px}
+.k-kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
+.k-kpi span{display:block;font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k-kpi strong{display:block;font:800 19px/1.25 var(--font-num);letter-spacing:-.02em;white-space:nowrap}
+.k-kpi strong small{font-size:11px;font-weight:700;color:var(--muted);margin-left:2px}
+.k-kpi .d{font-size:10.5px;font-weight:800}
+.k-kpi .d.up{color:var(--bad)}.k-kpi .d.dn{color:var(--ok)}.k-kpi .d.eq{color:var(--muted)}
+.k-kpi svg{display:block;width:100%;height:22px;margin-top:3px}
+.k-chart{display:block;width:100%;overflow:visible}
+.k-legend{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;font-weight:700;color:var(--muted);margin-top:5px}
+.k-legend span{display:inline-flex;align-items:center;gap:5px}
+.k-legend i{width:12px;height:3px;border-radius:2px;background:var(--c)}
+.k-legend i.box{height:8px;width:8px;border-radius:2px}
+.k-axis{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;color:var(--muted);margin-top:3px}
+.k-row{display:grid;grid-template-columns:repeat(var(--rc,2),minmax(0,1fr));gap:8px}
+.k-row>.k-sec+.k-sec{margin-top:0}
+.k-gauges{display:grid;grid-template-columns:repeat(var(--gc,3),minmax(0,1fr));gap:6px;text-align:center}
+.k-gauges figure{margin:0}
+.k-gauges figcaption{font-size:10.5px;font-weight:700;color:var(--muted);margin-top:-4px}
+.k-story{display:grid;gap:6px}
+.k-story p{margin:0;padding:5px 10px;border-radius:9px;background:var(--card);border-left:3px solid var(--sc,var(--acc));font-size:12px;line-height:1.45}
+.k-story p b{color:var(--sc,var(--acc))}
+.k-tl{position:relative;margin:2px 0 0;padding:0 0 0 14px;list-style:none;font-size:11.5px}
+.k-tl::before{content:"";position:absolute;left:4px;top:4px;bottom:4px;width:2px;background:var(--line)}
+.k-tl li{position:relative;padding:3px 0}
+.k-tl li::before{content:"";position:absolute;left:-14px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--tc,var(--acc));box-shadow:0 0 0 3px color-mix(in srgb,var(--tc,var(--acc)) 25%,transparent)}
+.k-tl time{color:var(--muted);font-weight:700;margin-right:6px;font-variant-numeric:tabular-nums}
+.k-list{display:grid;gap:4px}
+.k-li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;font-size:11.5px;padding:5px 8px;border-radius:9px;background:var(--card);cursor:pointer}
+.k-li:hover{outline:1px solid var(--acc)}
+.k-li .bar{height:4px;border-radius:3px;background:var(--line);margin-top:3px;overflow:hidden}
+.k-li .bar i{display:block;height:100%;background:var(--c,var(--acc));border-radius:3px}
+.k-tabs{display:flex;gap:3px;padding:3px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:10px}
+.k-tabs button{flex:1;border:0;background:none;border-radius:9px;padding:6px 4px;font-size:11.5px;font-weight:800;color:var(--muted)}
+.k-tabs button.on{background:color-mix(in srgb,var(--acc) 22%,transparent);color:var(--ink);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 60%,transparent)}
+.k-big{font:800 40px/1 var(--font-num);letter-spacing:-.03em}
+.k-big small{font-size:14px;color:var(--muted);font-weight:700;margin-left:3px}
+.k-mono{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace}
+.k-tbl{width:100%;border-collapse:collapse;font-size:11px}
+.k-tbl td,.k-tbl th{padding:3px 6px;text-align:left;border-bottom:1px dashed var(--line);white-space:nowrap}
+.k-tbl th{color:var(--muted);font-weight:700}
+.k-tbl td.n{text-align:right}
+.k-log{font-size:10.5px;line-height:1.55;max-height:120px;overflow:auto;margin:0;white-space:pre-wrap;color:var(--muted)}
+.k-log b{color:var(--ink);font-weight:700}
+.k-note{font-size:10.5px;color:var(--muted);margin-top:8px}
+.k-score{display:flex;align-items:center;gap:12px}
+.k-score .t{font-size:11.5px;line-height:1.5}
+.k-score .t b{display:block;font-size:13px}
+.k-live{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:var(--ok);letter-spacing:.06em}
+.k-live::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;animation:kblink 1.4s infinite}
+@keyframes kblink{50%{opacity:.25}}
+.k-cards{display:contents}
+
+/* ---------- layouts: body.L-<name>, 선택되면 body[data-sel] ---------- */
+body:not([data-sel]) #detail{opacity:0;pointer-events:none}
+#detail{overflow:auto;scrollbar-width:thin}
+/* dock: 장면 오른쪽 위에 세로 서랍 */
+.L-dock #detail{position:fixed;top:16px;bottom:16px;right:376px;left:auto;width:430px}
+/* sheet: 장면 아래 가로 시트 */
+.L-sheet #detail{position:fixed;left:16px;right:376px;bottom:14px;top:auto;width:auto;max-height:46vh}
+.L-sheet #detail .k-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px;align-items:start}
+.L-sheet #detail .k-body>.k-sec{margin:0}
+.L-sheet.C-pick #detail .k-body{grid-template-columns:repeat(6,minmax(0,1fr));align-items:stretch}
+.L-sheet.C-pick #detail .k-body>.k-sec{grid-column:span var(--span,2)}
+.k-cap{font-size:10.5px;color:var(--muted);text-align:center;margin-top:2px}
+/* float: 가운데 아래 떠 있는 카드 */
+.L-float #detail{position:fixed;left:calc(50% - 180px);transform:translateX(-50%);bottom:22px;top:auto;width:560px;max-height:62vh;box-shadow:0 30px 80px #0009}
+/* wide: 장면 왼쪽 넓은 패널 */
+.L-wide #detail{position:fixed;left:16px;top:150px;bottom:16px;width:520px}
+/* focus: 화면 가운데 큰 창 + 장면 어둡게 */
+.L-focus #detail{position:fixed;left:calc(50% - 180px);top:50%;transform:translate(-50%,-50%);width:min(880px,calc(100vw - 420px));max-height:82vh;z-index:30;box-shadow:0 40px 120px #000c}
+.L-focus #detail .k-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
+.L-focus #detail .k-body>.k-sec{margin:0}
+.L-focus #detail .k-body>.k-kpis,.L-focus #detail .k-body>.full{grid-column:1/-1}
+.L-focus[data-sel] #scene::after{content:"";position:absolute;inset:0;background:#000a;backdrop-filter:blur(3px);z-index:20;pointer-events:none}
+/* inspector: 오른쪽 사이드바 자리를 선택 패널이 대신함 */
+.L-inspector #detail{position:fixed;left:auto;right:0;top:0;bottom:0;width:360px;border-radius:0;z-index:40;border-width:0 0 0 1px}
+.L-inspector[data-sel] .side{visibility:hidden}
+/* bento: 장면 아래쪽 타일 격자 */
+.L-bento #detail{position:fixed;left:16px;right:376px;width:auto;bottom:14px;top:auto;max-height:52vh;background:transparent;border:0;backdrop-filter:none;padding:0}
+.L-bento #detail .k-headwrap{background:var(--glass);backdrop-filter:blur(18px);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin-bottom:8px}
+.L-bento #detail .k-head{margin:0}
+.L-bento #detail .k-body{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.L-bento #detail .k-body>*{margin:0!important;grid-column:span var(--span,2);background:var(--glass);backdrop-filter:blur(18px)}
+.L-bento #detail .k-body>.k-kpis{background:none;backdrop-filter:none}
+.L-bento #detail .k-body>.k-kpis .k-kpi{background:var(--glass);backdrop-filter:blur(18px)}
+/* tabs: 오른쪽 서랍 + 탭 */
+.L-tabs #detail{position:fixed;left:auto;top:16px;bottom:16px;right:376px;width:410px}
+/* hud: 장면 위에 작은 카드들이 흩어짐 */
+.L-hud #detail{position:fixed;left:auto;top:120px;right:376px;bottom:16px;width:330px;background:transparent;border:0;backdrop-filter:none;padding:0}
+.L-hud #detail .k-headwrap,.L-hud #detail .k-body>*{background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:7px!important}
+.L-hud #detail .k-body>.k-kpis{padding:6px}
+.L-hud #detail .k-head{margin:0}
+/* split: 선택하면 장면이 줄고 오른쪽에 상세 열 */
+.L-split #detail{position:fixed;left:auto;top:0;bottom:0;right:360px;width:520px;border-radius:0;border-width:0 1px;z-index:12}
+.L-split[data-sel] #scene{margin-right:520px}
+.L-split #detail .k-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
+.L-split #detail .k-body>.k-sec{margin:0}
+.L-split #detail .k-body>.k-kpis,.L-split #detail .k-body>.full{grid-column:1/-1}
+@media(max-width:900px){
+  .L-dock #detail,.L-sheet #detail,.L-float #detail,.L-wide #detail,.L-focus #detail,.L-tabs #detail,.L-hud #detail,.L-split #detail,.L-bento #detail,.L-inspector #detail{position:fixed;left:8px;right:8px;bottom:8px;top:auto;width:auto;max-height:70vh;transform:none}
+  .L-split[data-sel] #scene{margin-right:0}
+}
+.k-cw{position:relative}
+.k-cw .k-yl{position:absolute;left:2px;top:0;font-size:9px;font-weight:700;color:var(--muted);pointer-events:none;line-height:1}
+.k-cw .k-thl{position:absolute;right:2px;font-size:9.5px;font-weight:800;pointer-events:none;line-height:1;text-shadow:0 0 3px #000}
+.k-cw[data-tip]{cursor:crosshair}
+.k-cw .k-tipl{position:absolute;top:0;bottom:0;width:1px;background:var(--ink);opacity:0;pointer-events:none}
+.k-cw .k-tip{position:absolute;top:-6px;transform:translateY(-100%);min-width:120px;padding:6px 8px;border-radius:8px;background:rgba(10,12,16,.94);border:1px solid var(--line);font-size:11px;line-height:1.5;color:var(--ink);pointer-events:none;opacity:0;z-index:5;white-space:nowrap}
+.k-cw .k-tip span{display:flex;align-items:center;gap:5px}.k-cw .k-tip i{width:8px;height:2px;border-radius:1px;display:inline-block}
+.k-cw .k-tip>b{display:block;color:var(--muted);font-size:10px}
+.k-cw.tip-on .k-tip{opacity:1}.k-cw.tip-on .k-tipl{opacity:.35}
+.k-stats{display:grid;gap:6px;margin-top:2px}
+.k-stats>div{display:flex;align-items:baseline;justify-content:space-between;padding:5px 10px;border-radius:9px;background:var(--card);border:1px solid var(--line)}
+.k-stats span{font-size:11px;font-weight:700;color:var(--muted)}.k-stats b{font-size:19px;font-weight:800}.k-stats small{font-size:11px;color:var(--muted);margin-left:2px}
+.k-total{text-align:center;margin:2px 0 8px}.k-total b{font-size:40px;font-weight:800;line-height:1}.k-total small{font-size:14px;color:var(--muted);margin-left:3px}
+.k-stats span i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px}
+.k-osel{cursor:pointer;transition:border-color .15s,background .15s}.k-osel:hover{border-color:var(--acc)}
+.k-stats>.k-osel.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.k-total.k-osel{border:1px solid transparent;border-radius:10px;padding:4px 0}.k-total.k-osel.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent)}
+.k-mini{margin-left:8px;font:inherit;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;vertical-align:1px}
+.k-mini:hover{color:var(--ink);border-color:var(--acc)}.k-mini.on{color:var(--acc);border-color:var(--acc)}
