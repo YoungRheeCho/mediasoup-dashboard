@@ -5,6 +5,7 @@ import { WorkerTracker } from './api/live.js';
 import { registerOriginRoutes } from './api/originRoutes.js';
 import { AlertEvaluator } from './alerts/evaluator.js';
 import { CentralView } from './central/central.js';
+import { registerSysinfoRoutes, SysinfoStore } from './central/sysinfo.js';
 import { edgeMetrics, originMetrics } from './alerts/metrics.js';
 import { LogSink } from './alerts/sinks.js';
 import { loadConfig } from './config.js';
@@ -142,8 +143,14 @@ async function main(): Promise<void> {
 
 		k8s?.start();
 		stoppers.push(() => k8s?.stop());
-		central = new CentralView({ config, monitor, collector: () => collector, k8s });
+		const sysinfo = new SysinfoStore();
+
+		central = new CentralView({ config, monitor, collector: () => collector, k8s, sysinfo });
 		http.route('GET', '/api/central/snapshot', () => ({ body: central!.snapshot() }));
+		// 그래프 이력 30분(1초 간격). ?viewer=<id> 면 그 시청자 이력도
+		http.route('GET', '/api/central/history', req => ({ body: central!.history(Date.now(), req.query.get('viewer')) }));
+		// Metric-Collector → origin, 1초마다 노드·컨테이너 자원 값 (docs/api.md)
+		registerSysinfoRoutes(http, sysinfo);
 		central.start();
 		stoppers.push(() => central?.stop());
 

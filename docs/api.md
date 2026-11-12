@@ -72,11 +72,69 @@ origin 대시보드의 첫 화면(`/`, `web/central.html`)이 쓴다. edge들이
 
 | 경로 | 내용 |
 |---|---|
-| `GET /api/central/snapshot` | 현재 상태 한 번: `origin`(id·노드·송출자 수), `nodes`(노드별 CPU·qdisc drop(MOCK)·edge 목록), `edges`(상태·노드·Worker CPU 합·시청자 수·수집 1회 시간·건너뛴 주기), `viewers`(시청자 전체: edge·방송·loss(최근 5초)·RTT·레이어·freeze·fps·LATE(MOCK)), `history`(30분, 30초 간격 61칸: 노드 CPU·qdisc, edge CPU·시청자 수), `cluster`(k8s 조회 결과, 켰을 때만), `mockFields` |
-| `GET /api/central/stream` | SSE. 1초마다 위와 같은 형식을 보낸다 |
+| `GET /api/central/snapshot` | 현재 상태 한 번: `resourceSource`(아래), `origin`(id·노드·송출자 수), `nodes`(노드별 CPU·qdisc drop·edge 목록), `edges`(상태·노드·CPU·worker CPU 합·throttle·시청자 수·수집 1회 시간·건너뛴 주기), `viewers`(시청자 전체: edge·방송·loss(최근 5초)·RTT·레이어·freeze·fps·LATE(MOCK)), `history`(30분, 30초 간격 61칸: 노드 CPU·qdisc, edge CPU·시청자 수), `cluster`(k8s 조회 결과, 켰을 때만), `mockFields` |
+| `GET /api/central/stream` | SSE. 1초마다 위와 같은 형식을 보낸다 (이력은 없음) |
+| `GET /api/central/history` | 그래프 이력: 30분, 1초 간격 1800칸(마지막 칸 = `endSec`, 값이 없는 초는 `null`). `edges[id]` = `cpu`·`peak`(CPU 최대)·`viewers`·`thrMs`·`egressBps`(시청자 수신 비트레이트 합), `nodes[name]` = `cpu`·`peak`·`drop`·`viewers`(그 노드 edge들의 시청자 합). `?viewer=<id>`를 붙이면 `viewers[id]` = `loss`·`rtt`·`fps`·`layer`·`freezing`·`bitrateBps`. 화면은 처음에 한 번 받고 이후 스냅숏을 이어 붙인다. origin 메모리에만 있다 |
 
 - edge 상태: `connected` / `warning` / `stale`(1초 신호가 5초 이상 없음) / `lost`(edge_signal_age 경고 값, 기본 30초). `lost`인 edge의 시청자는 목록에서 뺀다. 10분 넘게 `lost`인 edge는 이 화면에서 숨긴다.
 - MOCK 항목은 [mock-data.md](mock-data.md).
+- 자원 값 출처 `resourceSource`:
+  - `collector`: Metric-Collector가 한 번이라도 보냈으면 그 값만 쓴다. `edges[].cpuPct` = 컨테이너 CPU(한도 대비, 수집기 pod 이름 = edge id), `edges[].throttledMs/throttledPct`, `nodes[].cpuPct` = 노드 /proc/stat, `nodes[].qdiscDropPerSec`. 수집기가 끊기거나 그 항목이 오래되면 `null`(다른 값으로 바꿔 끼우지 않는다).
+  - `sidecar`: 수집기를 붙이지 않은 환경. `edges[].cpuPct` = worker CPU 합, `nodes[].cpuPct` = 사이드카가 잰 /proc/stat, qdisc·throttle은 `null`.
+  - `edges[].workerCpuPct`는 출처와 상관없이 worker CPU 합. 이력(`/api/central/history`)의 CPU·drop도 위 값으로 쌓인다.
+  - `edges[].cpuPeakPct`·`nodes[].cpuPeakPct` = CPU 최대(그 1초 안의 0.1초 구간 사용률 중 최대). 수집기만 준다. 옛 수집기나 `sidecar`면 `null`.
+  - `nodes[].viewerCount` = 그 노드에 있는 edge들의 시청자 수 합.
+- `snapshot`의 `sysinfo`: 아래 Metric-Collector 값을 받은 그대로 싣는다 (수집기가 없으면 `seen:false`).
+
+### Metric-Collector 입력 (origin)
+
+수집기(Metric-Collector)가 1초마다 노드·컨테이너 자원 값을 보낸다. 매번 **전체 상태**를 보내고, origin은 마지막 한 번만 메모리에 둔다 (DB 저장 없음).
+
+| 경로 | 내용 |
+|---|---|
+| `POST /api/central/sysinfo` | 수집기 → origin. 성공 `200 {ok, serverTime, nodes, pods}`, 형식이 틀리면 `400 {error}` |
+| `GET /api/central/sysinfo` | 지금 들고 있는 값 (확인용). 아래 "받은 뒤 상태" 형식 |
+
+보내는 형식 (값은 모두 누적 카운터의 **직전 전송 이후 Δ**로 계산한 1초 구간 값):
+
+```json
+{
+  "t": 1762843945000,
+  "nodes": [
+    { "name": "edge1", "cpuPct": 34.2, "cpuPeakPct": 61.5, "qdiscDropsPerSec": 0, "ageMs": 300 }
+  ],
+  "pods": [
+    { "name": "mediasoup-edge-7c9f-abcde", "node": "edge1",
+      "cpuPct": 62.1, "cpuPeakPct": 88.0, "throttledMs": 0, "throttledPct": 0, "ageMs": 400 }
+  ]
+}
+```
+
+| 필드 | 의미 | 계산 (수집기) |
+|---|---|---|
+| `t` | 수집기 시각 (unix ms). 참고용 | |
+| `nodes[].name` | k8s 노드 이름 | |
+| `nodes[].cpuPct` | 노드 CPU 사용률 (%) | 1 − Δidle / Δtotal (`/proc/stat`) |
+| `nodes[].cpuPeakPct` | CPU 최대: 그 1초 안의 0.1초 구간 사용률 중 최대 (%). 없으면 생략·`null` | 0.1초 Δidle/Δtotal의 최대 (수집기가 쌓고 1초마다 읽으며 비움) |
+| `nodes[].qdiscDropsPerSec` | 물리 NIC root qdisc drop, 1초 동안의 합 | Δdrops (32비트 넘침은 uint32 뺄셈) |
+| `pods[].name` | pod 이름. edge의 `MSDASH_SERVER_ID`(= pod 이름)와 같아야 화면에서 맞춰진다 | |
+| `pods[].node` | pod가 떠 있는 노드 이름 | |
+| `pods[].cpuPct` | 컨테이너 CPU, 한도 대비 (%). 한도가 없으면 `null`. 순간적으로 100을 넘을 수 있다 | Δusage_usec / Δt / limit_cores |
+| `pods[].cpuPeakPct` | CPU 최대: 그 1초 안의 0.1초 구간 사용률(한도 대비) 중 최대 (%). 없으면 생략·`null` | 0.1초 Δusage/Δt/limit의 최대 |
+| `pods[].throttledMs` | 1초 동안 throttle로 멈춘 시간의 합 (ms) | Δthrottled_usec / 1000 |
+| `pods[].throttledPct` | 1초 동안의 CPU 주기 중 throttle된 비율 (%) | Δnr_throttled / Δnr_periods × 100 |
+| `*.ageMs` | 수집기가 그 agent에서 마지막으로 값을 받은 뒤 지난 시간 | |
+
+- 계산할 수 없는 값(첫 샘플, 카운터 리셋, 한도 없음)은 `null`로 보낸다. 0과 구분한다.
+- 숫자 칸 하나가 이상하면(음수, 문자열, 비율 100 초과) 그 칸만 `null`로 받는다. `nodes`/`pods`가 배열이 아니거나 `name`이 없으면 요청 전체를 400으로 거절한다. 같은 이름이 두 번 오면 뒤의 것을 쓴다.
+- 받은 뒤 상태 (`GET`, `snapshot.sysinfo`): `{seen, connected, receivedAt, ageMs, messages, nodes[], pods[]}`. 3초 넘게 POST가 없으면 `connected:false`이고 목록을 비운다. 항목의 `ageMs`가 3초를 넘으면 그 항목은 `stale:true`, 값은 `null`.
+
+```bash
+# 확인용으로 직접 보내 보기
+curl -X POST http://<origin>:18080/api/central/sysinfo -H 'content-type: application/json' \
+  -d '{"nodes":[{"name":"edge1","cpuPct":34.2,"qdiscDropsPerSec":0,"ageMs":300}],"pods":[]}'
+curl http://<origin>:18080/api/central/sysinfo
+```
 
 ## 알려진 한계
 

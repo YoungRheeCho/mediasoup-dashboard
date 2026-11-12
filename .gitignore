@@ -20,3 +20,6 @@ design-backup/
 *.pfx
 .DS_Store
 Thumbs.db
+
+# Design variant capture shots (regenerate with design/variants/_shared/capture.mjs)
+design/variants/shots/

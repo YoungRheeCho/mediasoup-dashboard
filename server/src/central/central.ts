@@ -5,6 +5,7 @@ import type { Config } from '../config.js';
 import type { ClusterView, K8sDiscovery } from '../k8s/discovery.js';
 import type { OriginLivenessMonitor } from '../liveness/originMonitor.js';
 import { createLogger } from '../log.js';
+import type { SysinfoStore, SysinfoView } from './sysinfo.js';
 
 const logger = createLogger('central');
 
@@ -15,22 +16,30 @@ const logger = createLogger('central');
  * 서버·노드·시청자 전체를 하나의 응답으로 만든다. DB를 읽지 않는다 (1초 갱신이라 메모리 값만 쓴다).
  *
  *  - GET /api/central/snapshot : 현재 상태 한 번
- *  - GET /api/central/stream   : SSE. 1초마다 같은 형식을 밀어 준다.
+ *  - GET /api/central/stream   : SSE. 1초마다 같은 형식을 밀어 준다 (이력은 싣지 않는다).
+ *  - GET /api/central/history  : 그래프 이력 (30분, 1초 간격 1800개). 화면은 처음에 한 번 받고 이후 1초 값을 이어 붙인다.
+ *                                ?viewer=<id> 를 붙이면 그 시청자의 이력도 함께 준다.
  *
- * 그래프 이력(30분, 30초 간격)은 origin 메모리에만 둔다. origin 대시보드를 재시작하면 그 시점부터 다시 쌓인다.
+ * 그래프 이력은 origin 메모리에만 둔다. origin 대시보드를 재시작하면 그 시점부터 다시 쌓인다.
+ *
+ * 자원 값(CPU·qdisc·throttle)의 출처 (resourceSource):
+ *  - 'collector' : Metric-Collector가 한 번이라도 보냈으면 그 값만 쓴다.
+ *                  edge CPU = 컨테이너 CPU(한도 대비), 노드 CPU = 노드 /proc/stat, qdisc drop, throttle.
+ *                  수집기가 끊기면 값은 null("—")로 둔다 (다른 출처로 바꿔 끼우지 않는다).
+ *  - 'sidecar'   : 수집기를 붙이지 않은 환경(로컬 등). edge CPU = worker CPU 합, 노드 CPU = 사이드카가 잰 /proc/stat.
+ *                  qdisc drop·throttle은 없음(null).
  */
 
 /** 이 화면에서 mock(예시 값)으로 채우는 항목. 화면이 MOCK 표시를 붙이고, docs/mock-data.md에 같은 목록이 있다. */
 export const CENTRAL_MOCK_FIELDS: Record<string, string> = {
 	'viewer.latePct': 'LATE 비율: 지표 정의가 정해지지 않아 loss와 viewer id로 만든 예시 값 (C1)',
-	'node.qdiscDropPerSec': 'qdisc drop: 수집 방식(tc / Prometheus)이 정해지지 않아 예시 값 (C2)',
 	'edge.loadBalancingReason': '로드 밸런싱 사유: 실제 배정 규칙을 몰라 "배정 전 시청자 수"만 표시 (C3)',
 	'viewer.name': '시청자 이름: 서버가 transport에 peerId를 넣지 않으면 mock 이름 (M1, nameMock=true인 시청자만)',
 	'viewer.freezeCount': 'freeze·fps: 브라우저 보고가 없는 시청자는 mock (M2, clientReported=false인 시청자만)',
 };
 
-const STEP_MS = 30_000;
-const POINTS = 61; // 30분 + 현재
+const STEP_MS = 1000;
+const POINTS = 1800; // 30분, 1초 간격
 const STALE_AFTER_S = 5; // 1초 신호가 이만큼 끊기면 화면에 "신호 지연"
 /**
  * 이만큼 신호가 없던 edge는 3D 화면에서 뺀다 (기존 Edges 화면에는 남는다).
@@ -38,7 +47,11 @@ const STALE_AFTER_S = 5; // 1초 신호가 이만큼 끊기면 화면에 "신호
  */
 const HIDE_AFTER_S = 600;
 
-type Bucket = { key: number; cpuSum: number; cpuN: number; viewers: number | null; dropSum: number; dropN: number };
+/** 1초 이력 한 칸. 값이 없으면 null */
+type EdgeRec = { cpu: number | null; peak: number | null; viewers: number | null; thrMs: number | null; egressBps: number | null };
+type NodeRec = { cpu: number | null; peak: number | null; drop: number | null; viewers: number | null };
+type ViewerRec = { loss: number | null; rtt: number | null; fps: number | null; layer: number | null; freezing: number | null; bitrateBps: number | null };
+type Slot<T> = { key: number; rec: T };
 
 export type CentralViewer = {
 	id: string;
@@ -62,11 +75,18 @@ export type CentralViewer = {
 };
 
 export type CentralSnapshot = ReturnType<CentralView['snapshot']>;
+export type CentralHistory = ReturnType<CentralView['history']>;
+
+type Resources = {
+	source: 'collector' | 'sidecar';
+	pods: Map<string, SysinfoView['pods'][number]>;
+	nodes: Map<string, SysinfoView['nodes'][number]>;
+};
 
 export class CentralView {
-	readonly #edgeBuckets = new Map<string, Bucket[]>();
-	readonly #nodeBuckets = new Map<string, Bucket[]>();
-	readonly #drop = new Map<string, number>(); // 노드별 qdisc drop mock 값
+	readonly #edgeHist = new Map<string, Slot<EdgeRec>[]>();
+	readonly #nodeHist = new Map<string, Slot<NodeRec>[]>();
+	readonly #viewerHist = new Map<string, Slot<ViewerRec>[]>();
 	readonly #clients = new Set<http.ServerResponse>();
 	#timer: NodeJS.Timeout | null = null;
 	#last: CentralSnapshot | null = null;
@@ -77,6 +97,8 @@ export class CentralView {
 			monitor: OriginLivenessMonitor;
 			collector: () => Collector;
 			k8s: K8sDiscovery | null;
+			/** Metric-Collector가 보내는 노드·컨테이너 CPU, qdisc drop, throttle (없으면 null) */
+			sysinfo?: SysinfoStore | null;
 		}
 	) {}
 
@@ -129,7 +151,7 @@ export class CentralView {
 
 	#tick(): void {
 		try {
-			this.#sample(Date.now());
+			this.sample(Date.now());
 
 			const snap = this.snapshot();
 
@@ -149,57 +171,138 @@ export class CentralView {
 		}
 	}
 
-	/** 1초마다 이력 버킷에 현재 값을 넣는다. */
-	#sample(now: number): void {
+	/** 1초마다 이력에 현재 값을 넣는다 (같은 초에 두 번 불리면 덮어쓴다). */
+	sample(now: number): void {
 		const key = Math.floor(now / STEP_MS);
+		const res = this.#resources(now);
+		const edges = this.#edges(now, res);
+		const viewers = this.#viewers(edges);
+		const egress = new Map<string, number>();
 
-		for (const e of this.#edges(now)) {
-			const b = bucketOf(this.#edgeBuckets, e.id, key);
-
-			if (e.cpuPct !== null) {
-				b.cpuSum += e.cpuPct;
-				b.cpuN++;
-			}
-
-			if (e.viewerCount !== null) {
-				b.viewers = e.viewerCount;
+		for (const v of viewers) {
+			if (v.bitrateBps !== null) {
+				egress.set(v.edgeId, (egress.get(v.edgeId) ?? 0) + v.bitrateBps);
 			}
 		}
 
-		for (const n of this.#nodes(now)) {
-			const b = bucketOf(this.#nodeBuckets, n.name, key);
+		for (const e of edges) {
+			push(this.#edgeHist, e.id, key, {
+				cpu: e.cpuPct,
+				peak: e.cpuPeakPct,
+				viewers: e.viewerCount,
+				thrMs: e.throttledMs,
+				egressBps: e.state === 'lost' || !e.liveSupported ? null : (egress.get(e.id) ?? 0),
+			});
+		}
 
-			if (n.cpuPct !== null) {
-				b.cpuSum += n.cpuPct;
-				b.cpuN++;
+		for (const n of this.#nodes(now, res)) {
+			push(this.#nodeHist, n.name, key, { cpu: n.cpuPct, peak: n.cpuPeakPct, drop: n.qdiscDropPerSec, viewers: n.viewerCount });
+		}
+
+		for (const v of viewers) {
+			push(this.#viewerHist, v.id, key, {
+				loss: v.lossPct,
+				rtt: v.rttMs,
+				fps: v.fps,
+				layer: v.layer,
+				freezing: v.clientReported ? (v.freezing ? 1 : 0) : null,
+				bitrateBps: v.bitrateBps,
+			});
+		}
+
+		// 30분 넘게 값이 안 들어온 대상(퇴장한 시청자, 사라진 edge·노드)은 지운다
+		for (const map of [this.#edgeHist, this.#nodeHist, this.#viewerHist] as Map<string, Slot<unknown>[]>[]) {
+			for (const [id, list] of map) {
+				if (!list.length || key - list[list.length - 1]!.key >= POINTS) {
+					map.delete(id);
+				}
 			}
-
-			b.dropSum += this.#stepDrop(n.name);
-			b.dropN++;
 		}
 	}
 
-	/** qdisc drop mock (C2): 대부분 0이고 가끔 몇 초간 튄다. */
-	#stepDrop(node: string): number {
-		let v = this.#drop.get(node) ?? 0;
+	/**
+	 * 그래프 이력. 배열 길이 POINTS, 마지막 칸 = endSec(현재 초), 값이 없는 초는 null.
+	 * viewerId를 주면 그 시청자 이력도 넣는다 (시청자 전체를 매번 보내면 커서 하나씩).
+	 */
+	history(now = Date.now(), viewerId?: string | null) {
+		const endSec = Math.floor(now / STEP_MS);
+		type Cols<T> = Record<keyof T, (number | null)[]>;
+		const cols = <T extends Record<string, number | null>>(list: Slot<T>[] | undefined, fields: (keyof T & string)[]): Cols<T> => {
+			const out = Object.fromEntries(fields.map(f => [f, new Array<number | null>(POINTS).fill(null)])) as Cols<T>;
 
-		if (v > 0) {
-			v = Math.max(0, v + (Math.random() - 0.62) * 2.2);
-		} else if (Math.random() < 0.012) {
-			v = 2 + Math.random() * 8;
+			for (const { key, rec } of list ?? []) {
+				const i = POINTS - 1 - (endSec - key);
+
+				if (i >= 0 && i < POINTS) {
+					for (const f of fields) {
+						out[f][i] = rec[f] ?? null;
+					}
+				}
+			}
+
+			return out;
+		};
+		const all = <T extends Record<string, number | null>>(map: Map<string, Slot<T>[]>, fields: (keyof T & string)[]): Record<string, Cols<T>> =>
+			Object.fromEntries([...map.keys()].map(id => [id, cols(map.get(id), fields)]));
+
+		return {
+			stepSec: STEP_MS / 1000,
+			points: POINTS,
+			/** 마지막 칸의 시각 (unix 초) */
+			endSec,
+			edges: all(this.#edgeHist, ['cpu', 'peak', 'viewers', 'thrMs', 'egressBps']),
+			nodes: all(this.#nodeHist, ['cpu', 'peak', 'drop', 'viewers']),
+			viewers:
+				viewerId && this.#viewerHist.has(viewerId)
+					? { [viewerId]: cols(this.#viewerHist.get(viewerId), ['loss', 'rtt', 'fps', 'layer', 'freezing', 'bitrateBps']) }
+					: {},
+		};
+	}
+
+	/** 자원 값 출처. 수집기 값이 한 번이라도 왔으면 수집기만 쓴다 (위 주석 참고). */
+	#resources(now: number): Resources {
+		const v = this.opts.sysinfo?.view(now) ?? null;
+
+		if (!v?.seen) {
+			return { source: 'sidecar', pods: new Map(), nodes: new Map() };
 		}
 
-		this.#drop.set(node, v);
-
-		return v;
+		return { source: 'collector', pods: new Map(v.pods.map(p => [p.name, p])), nodes: new Map(v.nodes.map(n => [n.name, n])) };
 	}
 
 	snapshot(now = Date.now()) {
-		const edges = this.#edges(now);
-		const nodes = this.#nodes(now);
+		const res = this.#resources(now);
+		const edges = this.#edges(now, res);
+		const nodes = this.#nodes(now, res);
 		const latest = this.opts.collector().latest;
 		const origin = latest?.mode === 'origin' ? latest : null;
 		const sending = origin ? origin.broadcasterSamples.filter(b => (b.bitrateBps ?? 0) > 0).length : 0;
+		const viewers = this.#viewers(edges);
+
+		return {
+			v: 1,
+			generatedAt: now,
+			mockFields: CENTRAL_MOCK_FIELDS,
+			origin: {
+				id: this.opts.config.serverId,
+				nodeName: this.opts.config.nodeName,
+				collectorOk: this.opts.collector().status.ok,
+				broadcasters: { sending, idle: origin ? origin.broadcasterSamples.length - sending : 0 },
+				rooms: origin?.rooms.length ?? 0,
+			},
+			/** CPU·qdisc·throttle 출처: 'collector'(Metric-Collector) | 'sidecar'(수집기 없음, qdisc·throttle 없음) */
+			resourceSource: res.source,
+			nodes,
+			edges,
+			viewers,
+			cluster: this.#cluster(),
+			/** Metric-Collector에서 받은 그대로 (POST /api/central/sysinfo). 화면 값은 위 edges·nodes에 이미 반영됨 */
+			sysinfo: this.opts.sysinfo?.view(now) ?? null,
+		};
+	}
+
+	/** edge들이 1초마다 보낸 시청자 목록을 합친다 */
+	#viewers(edges: { id: string; state: string }[]): CentralViewer[] {
 		const viewers: CentralViewer[] = [];
 
 		for (const e of edges) {
@@ -233,48 +336,10 @@ export class CentralView {
 			}
 		}
 
-		const keyNow = Math.floor(now / STEP_MS);
-		const series = (map: Map<string, Bucket[]>, id: string, pick: (b: Bucket) => number | null) => {
-			const list = map.get(id) ?? [];
-			const byKey = new Map(list.map(b => [b.key, b]));
-
-			return Array.from({ length: POINTS }, (_, i) => {
-				const b = byKey.get(keyNow - (POINTS - 1 - i));
-
-				return b ? pick(b) : null;
-			});
-		};
-		const cpuOf = (b: Bucket) => (b.cpuN ? round(b.cpuSum / b.cpuN, 1) : null);
-
-		return {
-			v: 1,
-			generatedAt: now,
-			mockFields: CENTRAL_MOCK_FIELDS,
-			origin: {
-				id: this.opts.config.serverId,
-				nodeName: this.opts.config.nodeName,
-				collectorOk: this.opts.collector().status.ok,
-				broadcasters: { sending, idle: origin ? origin.broadcasterSamples.length - sending : 0 },
-				rooms: origin?.rooms.length ?? 0,
-			},
-			nodes: nodes.map(n => ({ ...n, qdiscDropPerSec: round(this.#drop.get(n.name) ?? 0, 1), qdiscMock: true })),
-			edges,
-			viewers,
-			history: {
-				stepSec: STEP_MS / 1000,
-				points: POINTS,
-				nodes: Object.fromEntries(
-					nodes.map(n => [n.name, { cpu: series(this.#nodeBuckets, n.name, cpuOf), drop: series(this.#nodeBuckets, n.name, b => (b.dropN ? round(b.dropSum / b.dropN, 1) : null)) }])
-				),
-				edges: Object.fromEntries(
-					edges.map(e => [e.id, { cpu: series(this.#edgeBuckets, e.id, cpuOf), viewers: series(this.#edgeBuckets, e.id, b => b.viewers) }])
-				),
-			},
-			cluster: this.#cluster(),
-		};
+		return viewers;
 	}
 
-	#edges(now: number) {
+	#edges(now: number, res = this.#resources(now)) {
 		const pods = this.opts.k8s?.view.pods ?? [];
 
 		return this.opts.monitor
@@ -285,15 +350,25 @@ export class CentralView {
 			// 노드: edge가 직접 알려 준 값(NODE_NAME) → k8s Pod 목록에서 같은 이름의 Pod → 모름
 			const pod = pods.find(p => p.role === 'edge' && p.name === s.edgeId);
 			const stale = s.state !== 'lost' && s.ageSeconds !== null && s.ageSeconds >= STALE_AFTER_S;
+			// 수집기의 pod 이름 = edge id (MSDASH_SERVER_ID = Pod 이름)
+			const sys = res.pods.get(s.edgeId) ?? null;
+			const workerCpu = live?.cpuPct === null || live?.cpuPct === undefined ? null : round(live.cpuPct, 1);
 
 			return {
 				id: s.edgeId,
 				state: stale ? ('stale' as const) : s.state,
 				reason: stale ? `${s.ageSeconds}초 동안 실시간 신호 없음` : s.reason,
 				ageSeconds: s.ageSeconds,
-				nodeName: live?.nodeName ?? pod?.nodeName ?? null,
+				nodeName: live?.nodeName ?? pod?.nodeName ?? sys?.node ?? null,
 				dashboardUrl: s.dashboardUrl,
-				cpuPct: live?.cpuPct === null || live?.cpuPct === undefined ? null : round(live.cpuPct, 1),
+				/** collector: 컨테이너 CPU(한도 대비, 100을 잠깐 넘을 수 있음) / sidecar: worker CPU 합 */
+				cpuPct: res.source === 'collector' ? (sys?.cpuPct == null ? null : round(sys.cpuPct, 1)) : workerCpu,
+				/** 그 1초 안의 0.1초 구간 CPU 사용률 중 최대. 수집기만 준다 (없으면 null) */
+				cpuPeakPct: res.source === 'collector' && sys?.cpuPeakPct != null ? round(sys.cpuPeakPct, 1) : null,
+				workerCpuPct: workerCpu,
+				/** 직전 1초 동안 throttle로 멈춘 시간(ms)과 주기 비율(%). 수집기가 없으면 null */
+				throttledMs: sys?.throttledMs == null ? null : round(sys.throttledMs, 1),
+				throttledPct: sys?.throttledPct == null ? null : round(sys.throttledPct, 1),
 				hostCpuPct: live?.hostCpuPct ?? null,
 				workerCount: live?.workerCount ?? null,
 				viewerCount: s.state === 'lost' ? 0 : live ? live.viewers.length : s.viewerCount,
@@ -306,9 +381,12 @@ export class CentralView {
 		});
 	}
 
-	/** 노드 목록: k8s 조회가 되면 그 목록, 아니면 edge/origin이 알려 준 노드 이름. CPU는 그 노드의 Pod가 잰 /proc/stat 값. */
-	#nodes(now: number) {
-		const edges = this.#edges(now);
+	/**
+	 * 노드 목록: k8s 조회 결과 + 수집기가 보낸 노드 + edge/origin이 알려 준 노드 이름.
+	 * CPU·qdisc: 수집기 값. 수집기가 없으면 CPU는 그 노드의 Pod(사이드카)가 잰 /proc/stat 값, qdisc는 null.
+	 */
+	#nodes(now: number, res = this.#resources(now)) {
+		const edges = this.#edges(now, res);
 		const cpuReports = new Map<string, number[]>();
 		const add = (node: string | null, cpu: number | null) => {
 			if (node && cpu !== null) {
@@ -330,6 +408,7 @@ export class CentralView {
 			k8s.nodes.forEach(n => names.add(n.name));
 		}
 
+		res.nodes.forEach(n => names.add(n.name));
 		edges.forEach(e => names.add(e.nodeName ?? '(노드 정보 없음)'));
 
 		if (this.opts.config.nodeName) {
@@ -339,11 +418,19 @@ export class CentralView {
 		return [...names].sort().map(name => {
 			const cpus = cpuReports.get(name) ?? [];
 			const k = k8s?.nodes.find(n => n.name === name) ?? null;
+			const sys = res.nodes.get(name) ?? null;
+			const sidecarCpu = cpus.length ? round(cpus.reduce((a, b) => a + b, 0) / cpus.length, 1) : null;
+			const nodeEdges = edges.filter(e => (e.nodeName ?? '(노드 정보 없음)') === name);
 
 			return {
 				name,
-				cpuPct: cpus.length ? round(cpus.reduce((a, b) => a + b, 0) / cpus.length, 1) : null,
-				edgeIds: edges.filter(e => (e.nodeName ?? '(노드 정보 없음)') === name).map(e => e.id),
+				cpuPct: res.source === 'collector' ? (sys?.cpuPct == null ? null : round(sys.cpuPct, 1)) : sidecarCpu,
+				cpuPeakPct: res.source === 'collector' && sys?.cpuPeakPct != null ? round(sys.cpuPeakPct, 1) : null,
+				/** 물리 NIC root qdisc drop (/s). 수집기가 없으면 null */
+				qdiscDropPerSec: sys?.qdiscDropsPerSec == null ? null : round(sys.qdiscDropsPerSec, 1),
+				edgeIds: nodeEdges.map(e => e.id),
+				/** 이 노드에 있는 edge들의 시청자 수 합 (edge가 1초마다 보낸 값을 origin이 더함) */
+				viewerCount: nodeEdges.reduce((sum, e) => sum + (e.viewerCount ?? 0), 0),
 				hasOrigin: name === this.opts.config.nodeName,
 				ready: k ? k.ready : null,
 				cpuCores: k?.cpuCores ?? null,
@@ -365,7 +452,7 @@ export class CentralView {
 	}
 }
 
-function bucketOf(map: Map<string, Bucket[]>, id: string, key: number): Bucket {
+function push<T>(map: Map<string, Slot<T>[]>, id: string, key: number, rec: T): void {
 	let list = map.get(id);
 
 	if (!list) {
@@ -373,18 +460,17 @@ function bucketOf(map: Map<string, Bucket[]>, id: string, key: number): Bucket {
 		map.set(id, list);
 	}
 
-	let b = list[list.length - 1];
+	const last = list[list.length - 1];
 
-	if (!b || b.key !== key) {
-		b = { key, cpuSum: 0, cpuN: 0, viewers: null, dropSum: 0, dropN: 0 };
-		list.push(b);
-
-		while (list.length > POINTS + 2) {
-			list.shift();
-		}
+	if (last && last.key === key) {
+		last.rec = rec;
+	} else {
+		list.push({ key, rec });
 	}
 
-	return b;
+	while (list.length && key - list[0]!.key >= POINTS) {
+		list.shift();
+	}
 }
 
 /**
